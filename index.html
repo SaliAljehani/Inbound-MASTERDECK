@@ -53,14 +53,15 @@ td{padding:9px 6px;text-align:center;border-bottom:1px solid var(--line)}
 th:first-child,td:first-child{text-align:left}
 td:first-child{font-family:'Crimson Pro',serif;font-size:15px;font-weight:700;color:#3a4458}
 tr:nth-child(even) td{background:#FAFAFB}
-th.wa{background:var(--green-bg);color:var(--green)}
+th.wa{background:#F1F1F1;color:var(--navy)}
 .bad{color:var(--red);font-weight:600}.good{color:var(--green);font-weight:600}
 .box{border-radius:12px;padding:16px;min-height:120px}
 .box h2{font-size:20px;margin-bottom:8px}
-.box ul{margin:0;padding-left:18px;line-height:1.8}
+.box ul{margin:0;padding-left:18px;line-height:1.8;color:var(--navy)}
+.mt14{margin-top:14px}
 .ins{background:var(--navy-bg)}.ins h2{color:var(--navy)}
-.chl{background:var(--red-bg)}.chl h2{color:#B3121B}
-.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;background:var(--gray-bg)}
+.chl{background:#F1F1F1}.chl h2{color:var(--navy)}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;background:var(--gray-bg);color:var(--navy)}
 .b-prog{background:var(--amber-bg);color:var(--amber)}.b-done{background:var(--green-bg);color:var(--green)}.b-late{background:var(--red-bg);color:var(--red)}
 .empty{color:var(--muted);font-size:13px}
 .legend{display:flex;gap:14px;font-size:12px;color:var(--muted);margin-top:6px}
@@ -72,6 +73,11 @@ svg text{font-family:Inter,sans-serif;font-size:11px;fill:var(--muted)}
 .wbar{cursor:pointer}
 .status{font-size:12px;color:var(--muted);text-align:right;margin-top:10px}
 @media(max-width:900px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.two,.half{grid-template-columns:1fr}h1{font-size:26px}}
+.mtable tr.band td{font-family:'Crimson Pro',serif;font-size:16px;font-weight:700;padding:7px 10px;text-align:left}
+.band-calls td{background:#F1F1F1!important;color:#1F3A5F}
+.band-wa td{background:#F1F1F1!important;color:#1F3A5F}
+.band-tb td{background:#F1F1F1!important;color:#1F3A5F}
+.band-cx td{background:#F1F1F1!important;color:#1F3A5F}
 </style>
 </head>
 <body>
@@ -88,8 +94,8 @@ svg text{font-family:Inter,sans-serif;font-size:11px;fill:var(--muted)}
   <div class="filters">
     <div class="group" id="monthGroup"></div>
     <div class="group" id="viewGroup">
+      <button class="pill" data-v="week">Weekly</button>
       <button class="pill on" data-v="month">Monthly</button>
-      <button class="pill" data-v="week">Weeks</button>
     </div>
     <div class="group" id="weekGroup"></div>
   </div>
@@ -106,6 +112,16 @@ svg text{font-family:Inter,sans-serif;font-size:11px;fill:var(--muted)}
     <div class="tbl-wrap" id="table"></div>
   </div>
 
+  <div id="monthlyOnly" style="display:none">
+    <div class="grid half" id="notesWrap">
+      <div class="box ins"><h2>Key Insights</h2><div id="insights"></div></div>
+      <div class="box chl"><h2>Challenges</h2><div id="challenges"></div></div>
+    </div>
+    <div class="card" id="projectsWrap">
+      <h2>Projects in Pipeline</h2>
+      <div class="tbl-wrap" id="projects"></div>
+    </div>
+  </div>
   <div class="status" id="status"></div>
 </div>
 
@@ -116,6 +132,8 @@ const CONFIG = {
   API: 'https://script.google.com/macros/s/AKfycbz2xGcy0I_hQjLLfn7d-vNQV7TTxaGOptJrhuYr0aSMtHhAUyQVj2KcMHzbTISvNNv_oQ/exec',
   WEEKLY_TAB: 'Weekly MASTERDECK',
   MONTHLY_TAB: 'Monthly MASTERDECK',
+  INSIGHTS_TAB: 'Insights',
+  PROJECTS_TAB: 'Projects',
   YEAR: 2026,
   MONTHS: ['Sep','Oct','Nov','Dec']
 };
@@ -190,8 +208,16 @@ function parseMonthly(g){
   return out;
 }
 
+/* Insights / Projects tabs: row 1 = headers, column "Month" says which month the row belongs to */
+function parseTable(g){
+  if(!Array.isArray(g)||!g.length) return [];
+  const hi=g.findIndex(r=>r.some(c=>key(c)==='month')); if(hi<0) return [];
+  const h=g[hi].map(key);
+  return g.slice(hi+1).map(r=>{const o={};h.forEach((k,i)=>{if(k) o[k]=txt(r[i]);});return o;}).filter(o=>monthKey(o.month));
+}
+
 /* ================= STATE ================= */
-let WEEKS=[], MONTHLY={};
+let WEEKS=[], MONTHLY={}, INSIGHTS=[], PROJECTS=[];
 const S = { month: CONFIG.MONTHS[0], view:'month', week:0, tab:0 };
 
 async function fetchTab(tab){
@@ -199,19 +225,36 @@ async function fetchTab(tab){
   if(!r.ok) throw new Error('HTTP '+r.status);
   const j=await r.json(); if(j&&j.error) throw new Error(j.error); return j;
 }
+const CACHE_KEY='inbound_masterdeck_cache_v1';
+function applyData(w,m,keepMonth,ins,prj){
+  WEEKS=parseWeekly(w); MONTHLY=parseMonthly(m); INSIGHTS=parseTable(ins); PROJECTS=parseTable(prj);
+  if(!keepMonth){
+    const withData=CONFIG.MONTHS.filter(mo=>(MONTHLY[mo]&&MONTHLY[mo].hasData)||WEEKS.some(b=>b.month===mo&&b.hasData));
+    if(withData.length) S.month=withData[withData.length-1];
+  }
+  render();
+}
 async function load(){
-  const st=document.getElementById('status'); st.textContent='Loading…';
+  const st=document.getElementById('status');
+  // 1) show the last saved copy instantly (same browser), then refresh from the sheet
+  let cached=null;
+  try{ cached=JSON.parse(localStorage.getItem(CACHE_KEY)||'null'); }catch(e){}
+  if(cached&&cached.w){ applyData(cached.w,cached.m,false,cached.i,cached.p); st.textContent='Updating from Google Sheet…'; }
+  else st.textContent='Loading…';
   const errs=[];
-  const [w,m]=await Promise.all([
+  const [w,m,ins,prj]=await Promise.all([
     fetchTab(CONFIG.WEEKLY_TAB).catch(e=>{errs.push(CONFIG.WEEKLY_TAB+': '+e.message);return null;}),
-    fetchTab(CONFIG.MONTHLY_TAB).catch(e=>{errs.push(CONFIG.MONTHLY_TAB+': '+e.message);return null;})
+    fetchTab(CONFIG.MONTHLY_TAB).catch(e=>{errs.push(CONFIG.MONTHLY_TAB+': '+e.message);return null;}),
+    fetchTab(CONFIG.INSIGHTS_TAB).catch(()=>null),
+    fetchTab(CONFIG.PROJECTS_TAB).catch(()=>null)
   ]);
-  WEEKS=parseWeekly(w); MONTHLY=parseMonthly(m);
+  if(w||m){
+    const W=w||(cached&&cached.w), M=m||(cached&&cached.m);
+    applyData(W,M,!!cached,ins,prj);
+    try{ localStorage.setItem(CACHE_KEY,JSON.stringify({w:W,m:M,i:ins,p:prj,at:Date.now()})); }catch(e){}
+  } else if(!cached) render();
   st.textContent = errs.length ? 'Could not read: '+errs.join(' · ')
     : 'Live from Google Sheet · updated '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-  const withData=CONFIG.MONTHS.filter(mo=>(MONTHLY[mo]&&MONTHLY[mo].hasData)||WEEKS.some(b=>b.month===mo&&b.hasData));
-  if(withData.length) S.month=withData[withData.length-1];
-  render();
 }
 
 const weeksOf = m => WEEKS.filter(b=>b.month===m&&b.hasData);
@@ -234,6 +277,7 @@ function render(){
 
   if(S.view==='month'){ const mi=CONFIG.MONTHS.indexOf(S.month); renderKPIs(monthKpi(S.month), mi>0?monthKpi(CONFIG.MONTHS[mi-1]):null, 'vs previous month'); renderMonth(weeks); }
   else { renderKPIs(weekKpi(wb), weekKpi(prevWeekBlock()), 'vs previous week'); renderWeek(wb); }
+  renderNotes();
 }
 
 
@@ -283,34 +327,65 @@ function barChart(items,color){
   }).join('')+'</svg>';
 }
 function csatBars(items){
-  const r=items.filter(i=>num(i.raw)!=null);
-  return r.length?r.map(i=>`<div class="row"><span>${esc(i.label)}</span><div class="track"><div class="fill" style="width:${Math.min(100,num(i.raw))}%"></div></div><b>${show(i.raw)}</b></div>`).join(''):'<p class="empty">No CSAT yet.</p>';
+  const r=items;
+  return r.length?r.map(i=>`<div class="row"><span>${esc(i.label)}</span><div class="track"><div class="fill" style="width:${Math.min(100,num(i.raw)||0)}%"></div></div><b>${show(i.raw)||'-'}</b></div>`).join(''):'<p class="empty">No CSAT yet.</p>';
 }
 const short = n => n;
 const lbl = (n,x,y) => { const w=String(n).split(' '); if(w.length<2) return `<text x="${x}" y="${y}" text-anchor="middle">${esc(n)}</text>`; return `<text x="${x}" y="${y-7}" text-anchor="middle"><tspan x="${x}">${esc(w[0])}</tspan><tspan x="${x}" dy="13">${esc(w.slice(1).join(' '))}</tspan></text>`; };
 
+// every campaign: from the monthly Total rows + the weekly tab (so empty ones still show)
+function allCampaigns(M,weeks){
+  const list=[]; const add=c=>{ if(c&&!list.includes(c)) list.push(c); };
+  WEEKS.filter(b=>b.month===S.month).forEach(b=>b.rows.forEach(r=>add(r.campaign)));
+  if(M) M.totals.forEach(t=>add(t.campaign));
+  if(!list.length) WEEKS.forEach(b=>b.rows.forEach(r=>add(r.campaign)));
+  return list;
+}
+const BANDS={'Calls':'band-calls','WhatsApp':'band-wa','Tickets & Bookings':'band-tb','Customer Experience':'band-cx','Other':'band-cx'};
+
 function renderMonth(weeks){
   const M=MONTHLY[S.month], el=document.getElementById('table'), tabs=document.getElementById('tabs');
+  tabs.innerHTML='';
   document.getElementById('tableTitle').textContent='Campaigns · '+MONTH_NAMES[S.month];
+  const camps=allCampaigns(M,weeks);
+  const tot=c=>M?(M.totals.find(t=>t.campaign===c)||null):null;
 
   // Chart: Calls Volume per week for each campaign (from Weekly MASTERDECK)
-  const camps=[...new Set(weeks.flatMap(b=>b.rows.map(r=>r.campaign)))];
   document.getElementById('chartTitle').textContent='Calls Volume by week';
   const ci=b=>b.cols.findIndex(x=>x.k==='callsvolume');
   document.getElementById('chart').innerHTML = weeks.length ? groupedChart(camps,weeks.map(b=>({label:b.week,vals:camps.map(c=>{const r=b.rows.find(x=>x.campaign===c);return r?r.cells[ci(b)]:'';})}))) : '<p class="empty">No weekly data yet.</p>';
 
   // CSAT from the Total row
   document.getElementById('csatTitle').textContent='CSAT by campaign';
-  document.getElementById('csat').innerHTML = M ? csatBars(M.totals.map(t=>({label:t.campaign,raw:t.vals.csat}))) : '<p class="empty">No data yet.</p>';
+  document.getElementById('csat').innerHTML = csatBars(camps.map(c=>({label:c,raw:tot(c)?tot(c).vals.csat:''})));
 
-  if(!M||!M.hasData){ tabs.innerHTML=''; el.innerHTML='<p class="empty">No monthly data for this month yet.</p>'; return; }
+  if(!M||!M.hasData){ el.innerHTML='<p class="empty">No monthly data for this month yet.</p>'; return; }
   const groups=MONTH_GROUPS.map(([name,keys])=>[name,M.cols.filter(c=>keys.includes(c.k))]).filter(g=>g[1].length);
   const used=new Set(groups.flatMap(g=>g[1].map(c=>c.k)));
   const other=M.cols.filter(c=>!used.has(c.k)); if(other.length) groups.push(['Other',other]);
-  if(S.tab>=groups.length) S.tab=0;
-  tabs.innerHTML=groups.map((g,i)=>`<button class="tab ${i===S.tab?'on':''}" data-t="${i}">${esc(g[0])}</button>`).join('');
-  el.innerHTML=`<table><tr><th></th>${M.totals.map(t=>`<th>${esc(t.campaign)}</th>`).join('')}</tr>`+
-    groups[S.tab][1].map(c=>`<tr><td>${esc(c.label)}</td>${M.totals.map(t=>`<td>${show(t.vals[c.k])}</td>`).join('')}</tr>`).join('')+'</table>';
+  const n=camps.length+1;
+  el.innerHTML=`<table class="mtable"><tr><th></th>${camps.map(c=>`<th>${esc(c)}</th>`).join('')}</tr>`+
+    groups.map(([name,cols])=>`<tr class="band ${BANDS[name]||''}"><td colspan="${n}">${esc(name)}</td></tr>`+
+      cols.map(c=>`<tr><td>${esc(c.label)}</td>${camps.map(cp=>{const t=tot(cp); const v=t?t.vals[c.k]:''; return `<td>${c.k==='csat'&&!blank(v)?'<b>'+show(v)+'</b>':(show(v)||'-')}</td>`;}).join('')}</tr>`).join('')
+    ).join('')+'</table>';
+}
+
+function renderNotes(){
+  const wrap=document.getElementById('monthlyOnly');
+  if(S.view!=='month'){ wrap.style.display='none'; return; }
+  const rows=INSIGHTS.filter(r=>monthKey(r.month)===S.month);
+  const ins=rows.map(r=>r.keyinsights||r.insights||r.insight).filter(Boolean);
+  const chl=rows.map(r=>r.challenges||r.challenge).filter(Boolean);
+  const prj=PROJECTS.filter(r=>monthKey(r.month)===S.month&&(r.project||r.company));
+  const ul=a=>a.length?'<ul>'+a.map(x=>`<li>${esc(x)}</li>`).join('')+'</ul>':'<p class="empty">-</p>';
+  document.getElementById('insights').innerHTML=ul(ins);
+  document.getElementById('challenges').innerHTML=ul(chl);
+  document.getElementById('notesWrap').style.display=(ins.length||chl.length)?'grid':'none';
+  document.getElementById('projectsWrap').style.display=prj.length?'block':'none';
+  document.getElementById('projectsWrap').classList.toggle('mt14',!!(ins.length||chl.length));
+  document.getElementById('projects').innerHTML=`<table><tr><th>Company</th><th>Project</th><th>Owner</th><th>Status</th><th>Completion Date</th><th>Expected Impact</th></tr>`+
+    prj.map(r=>`<tr><td>${esc(r.company)}</td><td>${esc(r.project)}</td><td>${esc(r.owner)}</td><td><span class="badge">${esc(r.status)}</span></td><td>${esc(r.completiondate||r.date)}</td><td>${esc(r.expectedimpact||r.impact)}</td></tr>`).join('')+'</table>';
+  wrap.style.display=(ins.length||chl.length||prj.length)?'block':'none';
 }
 
 function renderWeek(b){
