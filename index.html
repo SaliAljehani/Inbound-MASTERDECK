@@ -32,7 +32,7 @@ h1{font-size:32px;font-weight:700;line-height:1.1}
 .pill.on{background:var(--red);color:#fff}
 .pill .d{font-size:11px;opacity:.75;margin-left:4px}
 .grid{display:grid;gap:14px;margin-bottom:14px}
-.kpis{grid-template-columns:repeat(5,minmax(0,1fr))}
+.kpis{grid-template-columns:repeat(4,minmax(0,1fr))}
 .two{grid-template-columns:minmax(0,2fr) minmax(0,1fr)}
 .half{grid-template-columns:repeat(2,minmax(0,1fr))}
 .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}
@@ -67,7 +67,7 @@ th.wa{background:var(--green-bg);color:var(--green)}
 .dot{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
 .bars .row{display:grid;grid-template-columns:90px 1fr 40px;gap:8px;align-items:center;margin:7px 0;font-size:13px}
 .bars .track{background:var(--gray-bg);border-radius:4px;height:12px}
-.bars .fill{background:var(--red);height:12px;border-radius:4px}
+.bars .fill{background:var(--navy);height:12px;border-radius:4px}
 svg text{font-family:Inter,sans-serif;font-size:11px;fill:var(--muted)}
 .wbar{cursor:pointer}
 .status{font-size:12px;color:var(--muted);text-align:right;margin-top:10px}
@@ -98,7 +98,7 @@ svg text{font-family:Inter,sans-serif;font-size:11px;fill:var(--muted)}
 
   <div class="grid two">
     <div class="card"><h2 id="chartTitle">Calls vs WhatsApp by week</h2><div id="chart"></div></div>
-    <div class="card"><h2>CSAT by campaign</h2><div class="bars" id="csat"></div></div>
+    <div class="card"><h2 id="csatTitle">CSAT by campaign</h2><div class="bars" id="csat"></div></div>
   </div>
 
   <div class="card" style="margin-bottom:14px">
@@ -106,284 +106,252 @@ svg text{font-family:Inter,sans-serif;font-size:11px;fill:var(--muted)}
     <div class="tbl-wrap" id="table"></div>
   </div>
 
-  <div id="monthlyOnly">
-    <div class="grid half">
-      <div class="box ins"><h2>Key Insights</h2><div id="insights"></div></div>
-      <div class="box chl"><h2>Challenges</h2><div id="challenges"></div></div>
-    </div>
-    <div class="card">
-      <h2>Projects in Pipeline</h2>
-      <div class="tbl-wrap" id="projects"></div>
-    </div>
-  </div>
   <div class="status" id="status"></div>
 </div>
 
 <script>
-/* ================= SETTINGS =================
-   SHEET_ID: paste the ID from your Google Sheet link
-   (docs.google.com/spreadsheets/d/<<THIS PART>>/edit)
-   Leave it empty to use the sample data below.
-   The sheet must be shared as "Anyone with the link – Viewer". */
+/* ================= SETTINGS ================= */
 const CONFIG = {
-  SHEET_ID: '',
-  DATA_TAB: 'Data',
-  NOTES_TAB: 'Notes',
-  PROJECTS_TAB: 'Projects',
+  // Apps Script web app (reads the private sheet and returns a tab as JSON)
+  API: 'https://script.google.com/macros/s/AKfycbz2xGcy0I_hQjLLfn7d-vNQV7TTxaGOptJrhuYr0aSMtHhAUyQVj2KcMHzbTISvNNv_oQ/exec',
+  WEEKLY_TAB: 'Weekly MASTERDECK',
+  MONTHLY_TAB: 'Monthly MASTERDECK',
   YEAR: 2026,
-  MONTHS: ['Sep','Oct','Nov','Dec'],
-  CAMPAIGNS: ['Petromin','BAIC','Nissan','Stellantis','Foton','Energy','National Oil','Volvo'],
-  // red / green highlight rules
-  RULES: { csatGood: 90, csatBad: 80, answeredBad: 50, abandonBad: 20 }
+  MONTHS: ['Sep','Oct','Nov','Dec']
 };
-
 const MONTH_NAMES = {Jan:'January',Feb:'February',Mar:'March',Apr:'April',May:'May',Jun:'June',Jul:'July',Aug:'August',Sep:'September',Oct:'October',Nov:'November',Dec:'December'};
 
-/* ============ SAMPLE DATA (same columns as the sheet) ============ */
-const DATA_HEADERS = ['Month','Period','Dates','Campaign','Calls','Answered%','SL%','ASA','AHT','ACW','Abandon%','WhatsApp','FirstRT','AvgRT','Reconnected','Tickets','Bookings','CSAT'];
-const SAMPLE_DATA = [
-  ['Sep','W1','1–8','Petromin',589,'75%','26%','0:03:10','0:04:35','','0%',1279,'0:02:00','','','','','78%'],
-  ['Sep','W1','1–8','BAIC',70,'46%','24%','0:03:07','0:02:43','','13%',8,'0:03:00','','','','','78%'],
-  ['Sep','W1','1–8','Nissan',1643,'71%','19%','0:03:34','0:04:14','','9%',1199,'0:11:00','','','','','83%'],
-  ['Sep','W1','1–8','Stellantis',779,'61%','19%','0:03:06','0:03:43','','36%',1387,'0:07:00','','','','','82%'],
-  ['Sep','W1','1–8','Foton',188,'62%','34%','0:01:48','0:02:38','','','','','','','','','96%'],
-  ['Sep','W1','1–8','Energy',50,'66%','44%','0:01:45','0:01:54','','','','','','','','','88%'],
-  ['Sep','Month','','Petromin',2243,'','41%','0:02:11','0:04:22','0:00:22','',4858,'0:02:00','','','','','88%'],
-  ['Sep','Month','','BAIC',389,'','46%','0:01:58','0:03:00','0:00:19','','','','','','',427,'87%'],
-  ['Sep','Month','','Nissan',5610,'','44%','0:02:13','0:03:51','0:00:23','',5610,'0:08:00','0:06:00','','',782,'92%'],
-  ['Sep','Month','','Stellantis',2339,'','55%','0:01:32','0:04:03','0:00:22','','','0:01:40','0:02:00','','',257,'89%'],
-  ['Sep','Month','','Foton',627,'','47%','0:01:31','0:02:17','0:00:18','','','','','','','','95%'],
-  ['Sep','Month','','Energy',189,'','47%','0:11:44','0:01:44','0:00:12','','','','','','','','94%']
+/* Monthly table tabs: which sheet columns go under which tab (matched by header, ignoring spaces/symbols) */
+const MONTH_GROUPS = [
+  ['Calls',               ['callsvolume','sl','asa','abandonedrate','avgaht','avgacw']],
+  ['WhatsApp',            ['whatsappvolume','avgfirstrt','avgrt','abandon','reconnected']],
+  ['Tickets & Bookings',  ['tickets','ticketsvscalls','booking','bookings']],
+  ['Customer Experience', ['csat']]
 ];
-const SAMPLE_NOTES = [ ['Month','Type','Text'] ];
-const SAMPLE_PROJECTS = [
-  ['Month','Company','Project','Owner','Status','Due','Impact'],
-  ['Sep','Nissan','WhatsApp SLA workflow','Team Lead','In Progress','15 Oct 2026','Cut Avg First RT to <5 min']
-];
+const WA_START = 'whatsappvolume';   // weekly table: this column and after are WhatsApp (green header)
 
 /* ================= HELPERS ================= */
 const key = s => String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'');
-function num(v){ if(v===null||v===undefined||v==='') return null; const n = Number(String(v).replace(/[,%\s]/g,'')); return isNaN(n)?null:n; }
-function pct(v){ if(v===''||v==null) return null; const s=String(v); let n=num(s); if(n===null) return null; if(!s.includes('%') && n>0 && n<=1) n*=100; return n; }
-function secs(v){
-  if(v===''||v==null) return null; const s=String(v).trim();
-  if(s.includes(':')){ const p=s.split(':').map(Number); if(p.some(isNaN)) return null; return p.length===3?p[0]*3600+p[1]*60+p[2]:p[0]*60+p[1]; }
-  const m=s.match(/^([\d.]+)\s*min/i); if(m) return Math.round(parseFloat(m[1])*60);
-  const n=Number(s); if(isNaN(n)) return null; return n<1?Math.round(n*86400):n;
-}
-const pad=n=>String(n).padStart(2,'0');
-function fT(s){ if(s==null) return '–'; s=Math.round(s); return Math.floor(s/3600)+':'+pad(Math.floor(s%3600/60))+':'+pad(s%60); }
-function fP(n){ return n==null?'–':Math.round(n)+'%'; }
-function fN(n){ return n==null?'–':Math.round(n).toLocaleString('en-US'); }
+const txt = v => String(v==null?'':v).trim();
+function num(v){ const s=txt(v).replace(/[,%\s]/g,''); if(!s||s==='-'||s==='–') return null; const n=Number(s); return isNaN(n)?null:n; }
 function esc(s){ return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function monthKey(s){ const k=key(s); if(k.length<3) return ''; return Object.keys(MONTH_NAMES).find(m=>k.startsWith(m.toLowerCase()))||''; }
+const show = v => { const s=txt(v); return s===''?'':esc(s); };      // exactly as written in the sheet
+const weekDates = w => txt(w).replace(/^week\s*/i,'');
+const blank = v => { const s=txt(v); return s===''||s==='-'||s==='–'||s==='%'; };
 
-function parseCSV(t){
-  const rows=[];let row=[],f='',q=false;
-  for(let i=0;i<t.length;i++){const c=t[i];
-    if(q){ if(c==='"'){ if(t[i+1]==='"'){f+='"';i++;} else q=false; } else f+=c; }
-    else if(c==='"') q=true; else if(c===','){row.push(f);f='';}
-    else if(c==='\n'||c==='\r'){ if(c==='\r'&&t[i+1]==='\n') i++; row.push(f);rows.push(row);row=[];f=''; }
-    else f+=c; }
-  if(f||row.length){row.push(f);rows.push(row);} return rows.filter(r=>r.some(x=>x!==''));
+/* ================= PARSE: Weekly MASTERDECK =================
+   Months side by side. In each month: repeated blocks of
+   "Weekly Inbound Summary" / "Week 1-8" / header row (Campaign | Calls Volume | …) / one row per campaign. */
+function parseWeekly(g){
+  const out=[]; if(!Array.isArray(g)) return out;
+  for(let r=0;r<g.length;r++){
+    if(key(g[r][0])!=='campaign') continue;               // header row of a week block
+    const head=g[r];
+    const starts=head.map((h,i)=>key(h)==='callsvolume'?i:-1).filter(i=>i>=0);
+    starts.forEach((c0,bi)=>{
+      const c1 = bi+1<starts.length ? starts[bi+1]-1 : head.length;
+      let month=''; for(let rr=0;rr<g.length&&!month;rr++) month=monthKey(g[rr][c0-1]);
+      if(!month) return;
+      let week='';                                          // "Week 1-8" just above the header
+      for(let rr=r-1;rr>=Math.max(0,r-3)&&!week;rr--) for(let c=c0;c<c1&&!week;c++) if(/^week\b/i.test(txt(g[rr][c]))) week=txt(g[rr][c]);
+      const cols=[]; for(let c=c0;c<c1;c++) if(txt(head[c])) cols.push({c,label:txt(head[c]),k:key(head[c])});
+      const rows=[];
+      for(let rr=r+1;rr<g.length;rr++){
+        const name=txt(g[rr][0]); if(!name||key(name)==='campaign') break;
+        rows.push({campaign:name, cells:cols.map(x=>g[rr][x.c])});
+      }
+      out.push({month, week, cols, rows, hasData: rows.some(x=>x.cells.some(v=>!blank(v)))});
+    });
+  }
+  return out;
 }
-function toObjects(table){
-  const h=table[0].map(key); return table.slice(1).map(r=>{const o={};h.forEach((k,i)=>o[k]=r[i]??'');return o;});
-}
-function normalize(o){
-  return {
-    month:String(o.month||'').trim().slice(0,3), period:String(o.period||'').trim(), dates:o.dates||'', campaign:String(o.campaign||'').trim(),
-    calls:num(o.calls), answered:pct(o.answered), sl:pct(o.sl), asa:secs(o.asa), aht:secs(o.aht), acw:secs(o.acw),
-    abandon:pct(o.abandon), wa:num(o.whatsapp), frt:secs(o.firstrt), art:secs(o.avgrt),
-    reconnected:num(o.reconnected), tickets:num(o.tickets), bookings:num(o.bookings), bookingsRaw:o.bookings, csat:pct(o.csat)
-  };
+
+/* ================= PARSE: Monthly MASTERDECK =================
+   Row 1 = headers; each month starts with a "Week" column (month name in the column before it).
+   Column A = campaign, "Total" row = month total. */
+function parseMonthly(g){
+  const out={}; if(!Array.isArray(g)||!g.length) return out;
+  const head=g[0];
+  const wcs=head.map((h,i)=>key(h)==='week'?i:-1).filter(i=>i>=0);
+  wcs.forEach((wc,bi)=>{
+    const end = bi+1<wcs.length ? wcs[bi+1]-1 : head.length;
+    let month=''; for(let r=1;r<g.length&&!month;r++) month=monthKey(g[r][wc-1]);
+    if(!month) return;
+    const cols=[]; for(let c=wc+1;c<end;c++) if(txt(head[c])) cols.push({c,label:txt(head[c]),k:key(head[c])});
+    const totals=[]; let campaign='';
+    for(let r=1;r<g.length;r++){
+      const a=txt(g[r][0]);
+      if(a&&key(a)!=='total'){ campaign=a; continue; }
+      if(key(a)==='total'&&campaign){ const vals={}; cols.forEach(x=>vals[x.k]=g[r][x.c]); totals.push({campaign,vals}); }
+    }
+    out[month]={cols,totals,hasData: totals.some(t=>Object.values(t.vals).some(v=>!blank(v)))};
+  });
+  return out;
 }
 
 /* ================= STATE ================= */
-let DATA=[], NOTES=[], PROJECTS=[];
-const S = { month: CONFIG.MONTHS[0], view:'month', week:null, tab:'calls' };
+let WEEKS=[], MONTHLY={};
+const S = { month: CONFIG.MONTHS[0], view:'month', week:0, tab:0 };
 
 async function fetchTab(tab){
-  const url=`https://docs.google.com/spreadsheets/d/${CONFIG.SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tab)}&headers=1`;
-  const r=await fetch(url); if(!r.ok) throw new Error(tab); return parseCSV(await r.text());
+  const r=await fetch(CONFIG.API+'?tab='+encodeURIComponent(tab)+'&t='+Date.now());
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  const j=await r.json(); if(j&&j.error) throw new Error(j.error); return j;
 }
 async function load(){
-  const st=document.getElementById('status');
-  if(CONFIG.SHEET_ID){
-    try{
-      const [d,n,p]=await Promise.all([fetchTab(CONFIG.DATA_TAB),fetchTab(CONFIG.NOTES_TAB).catch(()=>[['Month','Type','Text']]),fetchTab(CONFIG.PROJECTS_TAB).catch(()=>[['Month']])]);
-      DATA=toObjects(d).map(normalize); NOTES=toObjects(n); PROJECTS=toObjects(p);
-      st.textContent='Live from Google Sheet · updated '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-    }catch(e){ useSample(); st.textContent='Could not read the sheet. Showing sample data.'; }
-  } else { useSample(); st.textContent='Sample data · connect a Google Sheet in CONFIG.SHEET_ID'; }
-  DATA=DATA.filter(r=>r.month&&r.campaign);
-  // open on the latest month that has data
-  const withData=CONFIG.MONTHS.filter(m=>DATA.some(r=>r.month===m)); if(withData.length) S.month=withData[withData.length-1];
+  const st=document.getElementById('status'); st.textContent='Loading…';
+  const errs=[];
+  const [w,m]=await Promise.all([
+    fetchTab(CONFIG.WEEKLY_TAB).catch(e=>{errs.push(CONFIG.WEEKLY_TAB+': '+e.message);return null;}),
+    fetchTab(CONFIG.MONTHLY_TAB).catch(e=>{errs.push(CONFIG.MONTHLY_TAB+': '+e.message);return null;})
+  ]);
+  WEEKS=parseWeekly(w); MONTHLY=parseMonthly(m);
+  st.textContent = errs.length ? 'Could not read: '+errs.join(' · ')
+    : 'Live from Google Sheet · updated '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  const withData=CONFIG.MONTHS.filter(mo=>(MONTHLY[mo]&&MONTHLY[mo].hasData)||WEEKS.some(b=>b.month===mo&&b.hasData));
+  if(withData.length) S.month=withData[withData.length-1];
   render();
 }
-function useSample(){ DATA=toObjects([DATA_HEADERS,...SAMPLE_DATA]).map(normalize); NOTES=toObjects(SAMPLE_NOTES); PROJECTS=toObjects(SAMPLE_PROJECTS); }
 
-/* ================= DATA ACCESS ================= */
-const weeksOf = m => [...new Set(DATA.filter(r=>r.month===m&&/^w\d/i.test(r.period)).map(r=>r.period.toUpperCase()))].sort((a,b)=>parseInt(a.slice(1))-parseInt(b.slice(1)));
-const datesOf = (m,w) => (DATA.find(r=>r.month===m&&r.period.toUpperCase()===w&&r.dates)||{}).dates||'';
-
-function wavg(rows,f){ let s=0,w=0,c=0,t=0; rows.forEach(r=>{ if(r[f]==null) return; c++; t+=r[f]; if(r.calls){ s+=r[f]*r.calls; w+=r.calls; } }); return w?s/w:(c?t/c:null); }
-function sum(rows,f){ const v=rows.map(r=>r[f]).filter(x=>x!=null); return v.length?v.reduce((a,b)=>a+b,0):null; }
-function avg(rows,f){ const v=rows.map(r=>r[f]).filter(x=>x!=null); return v.length?v.reduce((a,b)=>a+b,0)/v.length:null; }
-
-function aggregate(rows,campaign){
-  return { campaign, calls:sum(rows,'calls'), wa:sum(rows,'wa'), tickets:sum(rows,'tickets'), bookings:sum(rows,'bookings'), reconnected:sum(rows,'reconnected'),
-    answered:wavg(rows,'answered'), sl:wavg(rows,'sl'), asa:wavg(rows,'asa'), aht:wavg(rows,'aht'), acw:wavg(rows,'acw'),
-    abandon:avg(rows,'abandon'), frt:avg(rows,'frt'), art:avg(rows,'art'), csat:avg(rows,'csat'), bookingsRaw:rows.length===1?rows[0].bookingsRaw:'' };
-}
-// one row per campaign for a month (uses the "Month" row, falls back to adding up the weeks)
-function periodRows(m,p){
-  return CONFIG.CAMPAIGNS.map(c=>{
-    let rows=DATA.filter(r=>r.month===m&&r.campaign.toLowerCase()===c.toLowerCase()&&r.period.toUpperCase()===p.toUpperCase());
-    if(!rows.length&&p==='Month') rows=DATA.filter(r=>r.month===m&&r.campaign.toLowerCase()===c.toLowerCase()&&/^w\d/i.test(r.period));
-    return rows.length?aggregate(rows,c):{campaign:c,empty:true};
-  });
-}
-function totals(rows){ const r=rows.filter(x=>!x.empty); return { calls:sum(r,'calls'), wa:sum(r,'wa'), sl:wavg(r,'sl'), answered:wavg(r,'answered'), bookings:sum(r,'bookings'), csat:avg(r,'csat') }; }
-
-function previous(){
-  const mi=CONFIG.MONTHS.indexOf(S.month);
-  if(S.view==='month') return mi>0?{m:CONFIG.MONTHS[mi-1],p:'Month'}:null;
-  const ws=weeksOf(S.month), wi=ws.indexOf(S.week);
-  if(wi>0) return {m:S.month,p:ws[wi-1]};
-  if(mi>0){ const pw=weeksOf(CONFIG.MONTHS[mi-1]); if(pw.length) return {m:CONFIG.MONTHS[mi-1],p:pw[pw.length-1]}; }
-  return null;
-}
+const weeksOf = m => WEEKS.filter(b=>b.month===m&&b.hasData);
 
 /* ================= RENDER ================= */
 function render(){
   const weeks=weeksOf(S.month);
-  if(S.view==='week'&&!weeks.includes(S.week)) S.week=weeks[weeks.length-1]||null;
-  const period=S.view==='month'?'Month':S.week;
+  if(S.week>=weeks.length) S.week=0;
 
-  // filters
   document.getElementById('monthGroup').innerHTML=CONFIG.MONTHS.map(m=>`<button class="pill ${m===S.month?'on':''}" data-m="${m}">${MONTH_NAMES[m]}</button>`).join('');
   document.querySelectorAll('#viewGroup .pill').forEach(b=>b.classList.toggle('on',b.dataset.v===S.view));
   const wg=document.getElementById('weekGroup');
   wg.style.display=S.view==='week'?'flex':'none';
-  wg.innerHTML=weeks.length?weeks.map(w=>`<button class="pill ${w===S.week?'on':''}" data-w="${w}">${w}${datesOf(S.month,w)?`<span class="d">${esc(datesOf(S.month,w))}</span>`:''}</button>`).join(''):'<span class="empty" style="padding:6px 10px">No weekly data yet</span>';
+  wg.innerHTML=weeks.length?weeks.map((b,i)=>`<button class="pill ${i===S.week?'on':''}" data-w="${i}">${esc(b.week||'Week '+(i+1))}</button>`).join(''):'<span class="empty" style="padding:6px 10px">No weekly data yet</span>';
 
-  const full=MONTH_NAMES[S.month]+' '+CONFIG.YEAR;
-  document.getElementById('title').textContent = S.view==='month' ? 'Monthly Inbound Summary · '+full
-    : 'Weekly Inbound Summary · '+MONTH_NAMES[S.month]+' '+(S.week||'')+(S.week&&datesOf(S.month,S.week)?' ('+datesOf(S.month,S.week)+')':'');
+  const wb=weeks[S.week];
+  document.getElementById('title').textContent = S.view==='month'
+    ? 'Monthly Inbound Summary · '+MONTH_NAMES[S.month]+' '+CONFIG.YEAR
+    : 'Weekly Inbound Summary · '+MONTH_NAMES[S.month]+(wb&&wb.week?' · '+wb.week:'');
 
-  const rows=period?periodRows(S.month,period):CONFIG.CAMPAIGNS.map(c=>({campaign:c,empty:true}));
-  renderKPIs(rows);
-  renderChart(weeks);
-  renderCSAT(rows);
-  renderTable(rows);
-  document.getElementById('monthlyOnly').style.display=S.view==='month'?'block':'none';
-  if(S.view==='month') renderNotes();
+  if(S.view==='month'){ const mi=CONFIG.MONTHS.indexOf(S.month); renderKPIs(monthKpi(S.month), mi>0?monthKpi(CONFIG.MONTHS[mi-1]):null, 'vs previous month'); renderMonth(weeks); }
+  else { renderKPIs(weekKpi(wb), weekKpi(prevWeekBlock()), 'vs previous week'); renderWeek(wb); }
 }
 
-function renderKPIs(rows){
-  const t=totals(rows), pv=previous(), p=pv?totals(periodRows(pv.m,pv.p)):null;
-  const label=S.view==='month'?'vs previous month':'vs previous week';
-  const items = S.view==='month'
-    ? [['Calls','calls',fN],['WhatsApp','wa',fN],['Service level','sl',fP],['Bookings','bookings',fN],['CSAT','csat',fP]]
-    : [['Calls','calls',fN],['Answered','answered',fP],['Service level','sl',fP],['WhatsApp','wa',fN],['CSAT','csat',fP]];
+
+/* ================= KPI CARDS =================
+   Weekly: totals of the selected week vs the previous week.
+   Monthly: totals of the month (Total rows) vs the previous month. */
+function kpiTotals(list){ // list of {calls,wa,sl,csat} raw cells
+  const n=list.map(x=>({calls:num(x.calls),wa:num(x.wa),sl:num(x.sl),csat:num(x.csat)}));
+  const sum=f=>{const v=n.map(x=>x[f]).filter(v=>v!=null);return v.length?v.reduce((a,b)=>a+b,0):null;};
+  const wavg=f=>{let s=0,w=0,c=0,t=0;n.forEach(x=>{if(x[f]==null)return;c++;t+=x[f];if(x.calls){s+=x[f]*x.calls;w+=x.calls;}});return w?s/w:(c?t/c:null);};
+  const avg=f=>{const v=n.map(x=>x[f]).filter(v=>v!=null);return v.length?v.reduce((a,b)=>a+b,0)/v.length:null;};
+  return {calls:sum('calls'),wa:sum('wa'),sl:wavg('sl'),csat:avg('csat')};
+}
+function weekKpi(b){ if(!b) return null; const i=k=>b.cols.findIndex(x=>x.k===k);
+  return kpiTotals(b.rows.map(r=>({calls:r.cells[i('callsvolume')],wa:r.cells[i('whatsappvolume')],sl:r.cells[i('sl')],csat:r.cells[i('csat')]}))); }
+function monthKpi(m){ const M=MONTHLY[m]; if(!M||!M.hasData) return null;
+  return kpiTotals(M.totals.map(t=>({calls:t.vals.callsvolume,wa:t.vals.whatsappvolume,sl:t.vals.sl,csat:t.vals.csat}))); }
+function renderKPIs(cur,prev,label){
+  const fN=v=>v==null?'–':Math.round(v).toLocaleString('en-US'), fP=v=>v==null?'–':Math.round(v)+'%';
+  const items=[['Total Calls','calls',fN],['WhatsApp','wa',fN],['SL','sl',fP],['CSAT','csat',fP]];
   document.getElementById('kpis').innerHTML=items.map(([l,k,f])=>{
+    const c=cur?cur[k]:null, p=prev?prev[k]:null;
     let d=`<div class="dlt">${label}: –</div>`;
-    if(p&&t[k]!=null&&p[k]!=null&&p[k]!==0){
-      const isPct=f===fP, diff=isPct?t[k]-p[k]:(t[k]-p[k])/p[k]*100;
-      const cls=diff>0?'up':diff<0?'down':'';
-      d=`<div class="dlt ${cls}">${diff>0?'▲':diff<0?'▼':''} ${Math.abs(Math.round(diff))}${isPct?' pts':'%'} ${label}</div>`;
+    if(c!=null&&p!=null&&p!==0){
+      const isPct=f===fP, diff=isPct?c-p:(c-p)/p*100, r=Math.round(diff);
+      d=`<div class="dlt ${r>0?'up':r<0?'down':''}">${r>0?'▲':r<0?'▼':''} ${Math.abs(r)}${isPct?' pts':'%'} ${label}</div>`;
     }
-    return `<div class="card kpi"><div class="lbl">${l}</div><div class="val">${f(t[k])}</div>${d}</div>`;
+    return `<div class="card kpi"><div class="lbl">${l}</div><div class="val">${f(c)}</div>${d}</div>`;
   }).join('');
 }
-
-function renderChart(weeks){
-  const el=document.getElementById('chart');
-  if(!weeks.length){ el.innerHTML='<p class="empty">Weekly rows for this month will appear here.</p>'; return; }
-  const W=640,H=200,pl=44,pb=28,pt=12;
-  const data=weeks.map(w=>totals(periodRows(S.month,w)));
-  if(S.view==='month'){
-    document.getElementById('chartTitle').textContent='Calls vs WhatsApp by week';
-    const max=Math.max(1,...data.map(d=>Math.max(d.calls||0,d.wa||0)));
-    const x=i=>weeks.length===1?(pl+W)/2:pl+i*(W-pl-20)/(weeks.length-1);
-    const y=v=>pt+(H-pt-pb)*(1-v/max);
-    const line=(k,c)=>{ const pts=data.map((d,i)=>d[k]==null?null:[x(i),y(d[k])]).filter(Boolean);
-      return `<polyline points="${pts.map(p=>p.join(',')).join(' ')}" fill="none" stroke="${c}" stroke-width="2.5"/>`+pts.map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="4" fill="${c}"/>`).join(''); };
-    const grid=[0,.5,1].map(f=>`<line x1="${pl}" x2="${W}" y1="${y(max*f)}" y2="${y(max*f)}" stroke="#E5E7EB"/><text x="${pl-6}" y="${y(max*f)+4}" text-anchor="end">${fN(max*f)}</text>`).join('');
-    el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="100%">${grid}${line('calls','#1F3A5F')}${line('wa','#E30613')}${weeks.map((w,i)=>`<text x="${x(i)}" y="${H-8}" text-anchor="middle">${w}</text>`).join('')}</svg>
-      <div class="legend"><span><i class="dot" style="background:#1F3A5F"></i>Calls</span><span><i class="dot" style="background:#E30613"></i>WhatsApp</span></div>`;
-  } else {
-    document.getElementById('chartTitle').textContent='Calls per week · '+MONTH_NAMES[S.month];
-    const max=Math.max(1,...data.map(d=>d.calls||0)), slot=(W-pl)/weeks.length, bw=Math.min(90,slot*.6);
-    el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="100%">`+weeks.map((w,i)=>{
-      const v=data[i].calls||0, h=(H-pt-pb-14)*v/max, cx=pl+slot*i+slot/2, on=w===S.week;
-      return `<g class="wbar" data-w="${w}"><rect x="${cx-bw/2}" y="${H-pb-h}" width="${bw}" height="${h}" rx="5" fill="${on?'#E30613':'#D5DCE6'}"/>
-        <text x="${cx}" y="${H-pb-h-5}" text-anchor="middle" style="fill:${on?'#E30613':'#6B7280'};font-weight:600">${fN(v)}</text>
-        <text x="${cx}" y="${H-8}" text-anchor="middle">${w}</text></g>`;
-    }).join('')+`</svg><div class="legend">Click a bar to open that week</div>`;
-  }
+function prevWeekBlock(){
+  const ws=weeksOf(S.month); if(S.week>0) return ws[S.week-1];
+  const mi=CONFIG.MONTHS.indexOf(S.month); if(mi>0){ const pw=weeksOf(CONFIG.MONTHS[mi-1]); return pw[pw.length-1]||null; } return null;
 }
 
-function renderCSAT(rows){
-  const r=rows.filter(x=>!x.empty&&x.csat!=null).sort((a,b)=>b.csat-a.csat);
-  document.getElementById('csat').innerHTML=r.length?r.map(x=>`<div class="row"><span>${esc(x.campaign)}</span><div class="track"><div class="fill" style="width:${Math.min(100,x.csat)}%;background:${x.csat>=CONFIG.RULES.csatGood?'#127A4B':x.csat<CONFIG.RULES.csatBad?'#E30613':'#1F3A5F'}"></div></div><b>${fP(x.csat)}</b></div>`).join(''):'<p class="empty">No CSAT yet.</p>';
+/* bar chart: values exactly as in the sheet (label shows the cell text) */
+function barChart(items,color){
+  const vals=items.map(i=>num(i.raw));
+  if(!vals.some(v=>v!=null)) return '<p class="empty">No data yet.</p>';
+  const W=640,H=210,pl=10,pb=34,pt=22, max=Math.max(1,...vals.filter(v=>v!=null));
+  const slot=(W-pl)/items.length, bw=Math.min(70,slot*.6);
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%">`+items.map((it,i)=>{
+    const v=vals[i]||0, h=(H-pt-pb)*v/max, cx=pl+slot*i+slot/2;
+    return `<rect x="${cx-bw/2}" y="${H-pb-h}" width="${bw}" height="${h}" rx="5" fill="${color}"/>
+      <text x="${cx}" y="${H-pb-h-6}" text-anchor="middle" style="fill:#1E2430;font-weight:600">${show(it.raw)}</text>
+      ${lbl(it.label,cx,H-14)}`;
+  }).join('')+'</svg>';
+}
+function csatBars(items){
+  const r=items.filter(i=>num(i.raw)!=null);
+  return r.length?r.map(i=>`<div class="row"><span>${esc(i.label)}</span><div class="track"><div class="fill" style="width:${Math.min(100,num(i.raw))}%"></div></div><b>${show(i.raw)}</b></div>`).join(''):'<p class="empty">No CSAT yet.</p>';
+}
+const short = n => n;
+const lbl = (n,x,y) => { const w=String(n).split(' '); if(w.length<2) return `<text x="${x}" y="${y}" text-anchor="middle">${esc(n)}</text>`; return `<text x="${x}" y="${y-7}" text-anchor="middle"><tspan x="${x}">${esc(w[0])}</tspan><tspan x="${x}" dy="13">${esc(w.slice(1).join(' '))}</tspan></text>`; };
+
+function renderMonth(weeks){
+  const M=MONTHLY[S.month], el=document.getElementById('table'), tabs=document.getElementById('tabs');
+  document.getElementById('tableTitle').textContent='Campaigns · '+MONTH_NAMES[S.month];
+
+  // Chart: Calls Volume per week for each campaign (from Weekly MASTERDECK)
+  const camps=[...new Set(weeks.flatMap(b=>b.rows.map(r=>r.campaign)))];
+  document.getElementById('chartTitle').textContent='Calls Volume by week';
+  const ci=b=>b.cols.findIndex(x=>x.k==='callsvolume');
+  document.getElementById('chart').innerHTML = weeks.length ? groupedChart(camps,weeks.map(b=>({label:b.week,vals:camps.map(c=>{const r=b.rows.find(x=>x.campaign===c);return r?r.cells[ci(b)]:'';})}))) : '<p class="empty">No weekly data yet.</p>';
+
+  // CSAT from the Total row
+  document.getElementById('csatTitle').textContent='CSAT by campaign';
+  document.getElementById('csat').innerHTML = M ? csatBars(M.totals.map(t=>({label:t.campaign,raw:t.vals.csat}))) : '<p class="empty">No data yet.</p>';
+
+  if(!M||!M.hasData){ tabs.innerHTML=''; el.innerHTML='<p class="empty">No monthly data for this month yet.</p>'; return; }
+  const groups=MONTH_GROUPS.map(([name,keys])=>[name,M.cols.filter(c=>keys.includes(c.k))]).filter(g=>g[1].length);
+  const used=new Set(groups.flatMap(g=>g[1].map(c=>c.k)));
+  const other=M.cols.filter(c=>!used.has(c.k)); if(other.length) groups.push(['Other',other]);
+  if(S.tab>=groups.length) S.tab=0;
+  tabs.innerHTML=groups.map((g,i)=>`<button class="tab ${i===S.tab?'on':''}" data-t="${i}">${esc(g[0])}</button>`).join('');
+  el.innerHTML=`<table><tr><th></th>${M.totals.map(t=>`<th>${esc(t.campaign)}</th>`).join('')}</tr>`+
+    groups[S.tab][1].map(c=>`<tr><td>${esc(c.label)}</td>${M.totals.map(t=>`<td>${show(t.vals[c.k])}</td>`).join('')}</tr>`).join('')+'</table>';
 }
 
-function mark(k,v){
-  const R=CONFIG.RULES; if(v==null) return '';
-  if(k==='csat') return v>=R.csatGood?'good':v<R.csatBad?'bad':'';
-  if(k==='answered') return v<R.answeredBad?'bad':'';
-  if(k==='abandon') return v>=R.abandonBad?'bad':'';
-  return '';
+function renderWeek(b){
+  const el=document.getElementById('table'), tabs=document.getElementById('tabs'); tabs.innerHTML='';
+  document.getElementById('tableTitle').textContent='Campaigns · '+(b&&b.week?b.week:'');
+  if(!b){ el.innerHTML='<p class="empty">No weekly data for this month yet.</p>';
+    document.getElementById('chart').innerHTML=''; document.getElementById('csat').innerHTML=''; return; }
+  const idx=k=>b.cols.findIndex(x=>x.k===k);
+  document.getElementById('chartTitle').textContent='Calls Volume · '+b.week;
+  document.getElementById('chart').innerHTML=barChart(b.rows.map(r=>({label:short(r.campaign),raw:r.cells[idx('callsvolume')]})),'#E30613');
+  document.getElementById('csatTitle').textContent='CSAT · '+b.week;
+  document.getElementById('csat').innerHTML=csatBars(b.rows.map(r=>({label:r.campaign,raw:r.cells[idx('csat')]})));
+  const wa=idx(WA_START);
+  el.innerHTML=`<table><tr><th>Campaign</th>${b.cols.map((c,i)=>`<th class="${wa>=0&&i>=wa?'wa':''}">${esc(c.label)}</th>`).join('')}</tr>`+
+    b.rows.map(r=>`<tr><td>${esc(r.campaign)}</td>${r.cells.map((v,i)=>`<td>${b.cols[i].k==='csat'&&!blank(v)?'<b>'+show(v)+'</b>':show(v)}</td>`).join('')}</tr>`).join('')+'</table>';
 }
 
-const MONTH_TABS = {
-  calls:['Calls',[['Calls Volume','calls',fN],['SL%','sl',fP],['Speed of Answer','asa',fT],['Abandoned Rate','abandon',fP],['Avg. AHT','aht',fT],['Avg. ACW','acw',fT]]],
-  wa:['WhatsApp',[['WhatsApp Volume','wa',fN],['Avg. First RT','frt',fT],['Avg. RT','art',fT],['Reconnected','reconnected',fN]]],
-  tb:['Tickets & Bookings',[['Tickets','tickets',fN],['Tickets vs Calls','tvc',fP],['Bookings','bookings',fN]]],
-  cx:['Customer Experience',[['CSAT','csat',fP]]]
-};
-
-function renderTable(rows){
-  const tabs=document.getElementById('tabs'), el=document.getElementById('table');
-  if(S.view==='month'){
-    document.getElementById('tableTitle').textContent='Campaigns · '+MONTH_NAMES[S.month];
-    tabs.innerHTML=Object.entries(MONTH_TABS).map(([k,[l]])=>`<button class="tab ${k===S.tab?'on':''}" data-t="${k}">${l}</button>`).join('');
-    const metrics=MONTH_TABS[S.tab][1];
-    rows.forEach(r=>{ r.tvc=(r.tickets!=null&&r.calls)?r.tickets/r.calls*100:null; });
-    el.innerHTML=`<table><tr><th></th>${rows.map(r=>`<th>${esc(r.campaign)}</th>`).join('')}</tr>`+
-      metrics.map(([l,k,f])=>`<tr><td>${l}</td>${rows.map(r=>{
-        let v=r[k]; let txt=f(v);
-        if(k==='bookings'&&v==null&&r.bookingsRaw) txt=esc(r.bookingsRaw);
-        return `<td class="${mark(k,v)}">${r.empty?'–':txt}</td>`;}).join('')}</tr>`).join('')+'</table>';
-  } else {
-    document.getElementById('tableTitle').textContent='Campaigns · '+(S.week||'');
-    tabs.innerHTML='';
-    const cols=[['Calls Volume','calls',fN],['Answered%','answered',fP],['SL %','sl',fP],['ASA','asa',fT],['AHT','aht',fT],['CSAT','csat',fP],['WhatsApp Volume','wa',fN,1],['Abandon%','abandon',fP,1],['Avg. First RT','frt',fT,1]];
-    el.innerHTML=`<table><tr><th>Campaign</th>${cols.map(c=>`<th class="${c[3]?'wa':''}">${c[0]}</th>`).join('')}</tr>`+
-      rows.map(r=>`<tr><td>${esc(r.campaign)}</td>${cols.map(([l,k,f])=>`<td class="${mark(k,r[k])}">${r.empty?'':(k==='csat'&&r[k]!=null?'<b>'+f(r[k])+'</b>':f(r[k]))}</td>`).join('')}</tr>`).join('')+'</table>';
-  }
-}
-
-function renderNotes(){
-  const n=NOTES.filter(x=>String(x.month).slice(0,3)===S.month&&x.text);
-  const list=t=>{ const i=n.filter(x=>key(x.type).startsWith(t)); return i.length?'<ul>'+i.map(x=>`<li>${esc(x.text)}</li>`).join('')+'</ul>':'<p class="empty">Nothing added for this month.</p>'; };
-  document.getElementById('insights').innerHTML=list('insight');
-  document.getElementById('challenges').innerHTML=list('challenge');
-  const p=PROJECTS.filter(x=>String(x.month).slice(0,3)===S.month&&x.project);
-  const badge=s=>{ const k=key(s); const c=k.includes('progress')?'b-prog':k.includes('done')||k.includes('complete')?'b-done':k.includes('delay')||k.includes('late')?'b-late':''; return `<span class="badge ${c}">${esc(s||'–')}</span>`; };
-  document.getElementById('projects').innerHTML=p.length?`<table><tr><th>Company</th><th>Project</th><th>Owner</th><th>Status</th><th>Completion Date</th><th>Expected Impact</th></tr>`+
-    p.map(x=>`<tr><td>${esc(x.company)}</td><td>${esc(x.project)}</td><td>${esc(x.owner)}</td><td>${badge(x.status)}</td><td>${esc(x.due)}</td><td>${esc(x.impact)}</td></tr>`).join('')+'</table>'
-    :'<p class="empty">No projects for this month.</p>';
+/* grouped bars: campaigns on x, one bar per week; labels = cell text */
+function groupedChart(camps,series){
+  const W=640,H=230,pb=34,pt=24,pl=6;
+  const all=series.flatMap(s=>s.vals.map(num)).filter(v=>v!=null); if(!all.length) return '<p class="empty">No data yet.</p>';
+  const max=Math.max(1,...all), shades=['#F3A3A8','#E8606A','#E30613','#9E0B14','#5C060C'];
+  const slot=(W-pl)/camps.length, bw=Math.min(22,(slot*.8)/series.length);
+  let svg=`<svg viewBox="0 0 ${W} ${H}" width="100%">`;
+  camps.forEach((c,ci)=>{
+    const x0=pl+slot*ci+(slot-bw*series.length)/2;
+    series.forEach((s,si)=>{ const v=num(s.vals[ci]); if(v==null) return; const h=(H-pt-pb)*v/max, x=x0+si*bw;
+      svg+=`<rect x="${x}" y="${H-pb-h}" width="${bw-2}" height="${h}" rx="3" fill="${shades[si%shades.length]}"><title>${esc(c)} · ${esc(s.label)}: ${esc(txt(s.vals[ci]))}</title></rect>`; });
+    svg+=lbl(c,pl+slot*ci+slot/2,H-14);
+  });
+  svg+='</svg><div class="legend">'+series.map((s,si)=>`<span><i class="dot" style="background:${shades[si%shades.length]}"></i>${esc(s.label)}</span>`).join('')+'</div>';
+  return svg;
 }
 
 /* ================= EVENTS ================= */
 document.addEventListener('click',e=>{
   const m=e.target.closest('[data-m]'), v=e.target.closest('[data-v]'), w=e.target.closest('[data-w]'), t=e.target.closest('[data-t]');
-  if(m){ S.month=m.dataset.m; S.week=null; }
+  if(m){ S.month=m.dataset.m; S.week=0; S.tab=0; }
   else if(v){ S.view=v.dataset.v; }
-  else if(w){ S.week=w.dataset.w; S.view='week'; }
-  else if(t){ S.tab=t.dataset.t; }
+  else if(w){ S.week=+w.dataset.w; S.view='week'; }
+  else if(t){ S.tab=+t.dataset.t; }
   else return;
   render();
 });
