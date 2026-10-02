@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Inbound Call Center Master Deck 2026</title>
-<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Tinos:wght@400;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --red:#E0303A; --red-bg:#FDECEC; --navy:#2B4870; --navy-bg:#E8F0FA;
+  --red:#D9444A; --red-bg:#FDECEC; --navy:#4A6188; --navy-bg:#E8F0FA;
   --green:#127A4B; --green-bg:#E3F4EC; --amber:#9A6200; --amber-bg:#FFF3DC;
   --gray-bg:#F1F1F1; --text:#1E2430; --muted:#6B7280; --line:#E5E7EB; --card:#FFFFFF; --page:#F6F7F9;
 }
@@ -78,10 +78,10 @@ svg text{font-family:Inter,sans-serif;font-size:9.5px;fill:var(--muted)}
 .status{font-size:12px;color:var(--muted);text-align:right;margin-top:10px}
 @media(max-width:900px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.two,.half{grid-template-columns:1fr}h1{font-size:26px}}
 .mtable tr.band td{font-family:'Crimson Pro',serif;font-size:16px;font-weight:700;padding:7px 10px;text-align:left}
-.band-calls td{background:#F1F1F1!important;color:#2B4870}
-.band-wa td{background:#F1F1F1!important;color:#2B4870}
-.band-tb td{background:#F1F1F1!important;color:#2B4870}
-.band-cx td{background:#F1F1F1!important;color:#2B4870}
+.band-calls td{background:#F1F1F1!important;color:#4A6188}
+.band-wa td{background:#F1F1F1!important;color:#4A6188}
+.band-tb td{background:#F1F1F1!important;color:#4A6188}
+.band-cx td{background:#F1F1F1!important;color:#4A6188}
 
 /* ===== compact sizes + very light lines + table style E ===== */
 :root{--line:#EFF1F4}
@@ -116,6 +116,12 @@ th.wa{background:#F3F4F6!important;color:var(--red)!important}
 #panelTabs{display:flex;gap:6px;margin:0 0 10px}
 #panelTabs .tab{font-size:12px;padding:6px 14px}
 @media(max-width:900px){h1{font-size:22px}}
+
+/* ===== one font everywhere: Times New Roman (Tinos = identical web copy) ===== */
+body,h1,h2,h3,th,td,td:first-child,.pill,.tab,.mtable tr.band td,svg text,button,.kpi .val,table tr:first-child th{font-family:'Times New Roman',Tinos,Times,serif!important}
+body{font-size:14px} table{font-size:13.5px} td:first-child{font-size:14px;font-weight:700} table tr:first-child th{font-size:14px}
+.kpi .val{font-size:25px;font-weight:700}.kpi .lbl,.kpi .dlt{font-size:13px} .pill,.tab{font-size:13.5px!important} h1{font-size:30px} .card h2,.box h2{font-size:19px}
+.mtable tr.band td{font-size:16px} svg text{font-size:11px} .bars .row{font-size:13px} .box ul{font-size:14px} .status{font-size:12px}
 </style>
 </head>
 <body>
@@ -446,7 +452,7 @@ function renderWeek(b){
     document.getElementById('chart').innerHTML=''; document.getElementById('csat').innerHTML=''; return; }
   const idx=k=>b.cols.findIndex(x=>x.k===k);
   document.getElementById('chartTitle').textContent='Calls Volume · '+b.week;
-  document.getElementById('chart').innerHTML=barChart(b.rows.map(r=>({label:short(r.campaign),raw:r.cells[idx('callsvolume')]})),'#E0303A');
+  document.getElementById('chart').innerHTML=barChart(b.rows.map(r=>({label:short(r.campaign),raw:r.cells[idx('callsvolume')]})),'#D9444A');
   document.getElementById('csatTitle').textContent='CSAT · '+b.week;
   document.getElementById('csat').innerHTML=csatBars(b.rows.map(r=>({label:r.campaign,raw:r.cells[idx('csat')]})));
   const wa=idx(WA_START);
@@ -458,7 +464,7 @@ function renderWeek(b){
 function groupedChart(camps,series){
   const W=640,H=230,pb=34,pt=24,pl=6;
   const all=series.flatMap(s=>s.vals.map(num)).filter(v=>v!=null); if(!all.length) return '<p class="empty">No data yet.</p>';
-  const max=Math.max(1,...all), shades=['#F2AAAE','#EA6C72','#E0303A','#A8232B','#6B171C'];
+  const max=Math.max(1,...all), shades=['#F4CBCC','#ECA2A4','#E27377','#D9444A','#BF3C41'];
   const slot=(W-pl)/camps.length, bw=Math.min(22,(slot*.8)/series.length);
   let svg=`<svg viewBox="0 0 ${W} ${H}" width="100%">`;
   camps.forEach((c,ci)=>{
