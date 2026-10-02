@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
-  --red:#E30613; --red-bg:#FDECEC; --navy:#1F3A5F; --navy-bg:#E8F0FA;
+  --red:#E0303A; --red-bg:#FDECEC; --navy:#2B4870; --navy-bg:#E8F0FA;
   --green:#127A4B; --green-bg:#E3F4EC; --amber:#9A6200; --amber-bg:#FFF3DC;
   --gray-bg:#F1F1F1; --text:#1E2430; --muted:#6B7280; --line:#E5E7EB; --card:#FFFFFF; --page:#F6F7F9;
 }
@@ -45,6 +45,8 @@ h1{font-size:32px;font-weight:700;line-height:1.1}
 .up{color:var(--green)!important}.down{color:var(--red)!important}
 .head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}
 .head h2{margin:0}
+#tableTitle{display:none}
+.head:has(#tabs:empty){display:none}
 .tabs{display:flex;gap:4px;flex-wrap:wrap}
 .tab{border:1px solid var(--line);background:#fff;padding:6px 12px;border-radius:7px;font:inherit;font-size:12px;cursor:pointer}
 .tab.on{background:var(--navy);color:#fff;border-color:var(--navy)}
@@ -71,15 +73,49 @@ th.wa{background:#F1F1F1;color:var(--navy)}
 .bars .row{display:grid;grid-template-columns:90px 1fr 40px;gap:8px;align-items:center;margin:7px 0;font-size:13px}
 .bars .track{background:var(--gray-bg);border-radius:4px;height:12px}
 .bars .fill{background:var(--navy);height:12px;border-radius:4px}
-svg text{font-family:Inter,sans-serif;font-size:11px;fill:var(--muted)}
+svg text{font-family:Inter,sans-serif;font-size:9.5px;fill:var(--muted)}
 .wbar{cursor:pointer}
 .status{font-size:12px;color:var(--muted);text-align:right;margin-top:10px}
 @media(max-width:900px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.two,.half{grid-template-columns:1fr}h1{font-size:26px}}
 .mtable tr.band td{font-family:'Crimson Pro',serif;font-size:16px;font-weight:700;padding:7px 10px;text-align:left}
-.band-calls td{background:#F1F1F1!important;color:#1F3A5F}
-.band-wa td{background:#F1F1F1!important;color:#1F3A5F}
-.band-tb td{background:#F1F1F1!important;color:#1F3A5F}
-.band-cx td{background:#F1F1F1!important;color:#1F3A5F}
+.band-calls td{background:#F1F1F1!important;color:#2B4870}
+.band-wa td{background:#F1F1F1!important;color:#2B4870}
+.band-tb td{background:#F1F1F1!important;color:#2B4870}
+.band-cx td{background:#F1F1F1!important;color:#2B4870}
+
+/* ===== compact sizes + very light lines + table style E ===== */
+:root{--line:#EFF1F4}
+body{font-size:13px}
+h1{font-size:26px}
+header{padding:32px 130px 12px}
+header .logo{top:26px}
+.logo{height:40px}
+.card{border-color:#EEF0F3;padding:14px}
+.card h2,.box h2{font-size:17px}
+.kpi .val{font-size:22px}
+.kpi .lbl,.kpi .dlt{font-size:11.5px}
+#monthGroup .pill{padding:7px 12px;font-size:12px}
+#viewGroup .pill{padding:5px 16px;font-size:12px}
+#weekGroup .pill{font-size:12px;padding:6px 12px}
+.filters{border-bottom-color:#EFF1F4}
+.grid{gap:12px;margin-bottom:12px}
+.bars .row{font-size:12px;margin:6px 0}
+.box{padding:14px;min-height:0}
+.box ul{font-size:12.5px;line-height:1.7}
+.status{font-size:11px}
+table{font-size:12px}
+tr:nth-child(even) td{background:transparent}
+td{padding:7px 6px;border-bottom:1px solid #F1F3F5}
+td:first-child{font-size:13px;color:#33405A}
+table tr:first-child th{background:#F3F4F6;color:var(--red);border-bottom:0;font-family:Inter,sans-serif;font-size:12px;font-weight:700;padding:9px 6px}
+table tr:first-child th:first-child{border-radius:8px 0 0 8px}
+table tr:first-child th:last-child{border-radius:0 8px 8px 0}
+th.wa{background:#F3F4F6!important;color:var(--red)!important}
+.mtable tr.band td{background:#fff!important;color:var(--navy);font-family:'Crimson Pro',serif;font-size:15px;font-weight:700;padding:14px 8px 5px;border-bottom:1px solid #DCE3EC}
+.mtable tr.band td::before{content:'';display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--red);margin-right:8px;vertical-align:1px}
+#panelTabs{display:flex;gap:6px;margin:0 0 10px}
+#panelTabs .tab{font-size:12px;padding:6px 14px}
+@media(max-width:900px){h1{font-size:22px}}
 </style>
 </head>
 <body>
@@ -106,7 +142,11 @@ svg text{font-family:Inter,sans-serif;font-size:11px;fill:var(--muted)}
     <div class="card"><h2 id="csatTitle">CSAT by campaign</h2><div class="bars" id="csat"></div></div>
   </div>
 
-  <div class="card" style="margin-bottom:14px">
+  <div id="panelTabs">
+    <button class="tab on" data-p="summary">Campaigns Summary</button>
+    <button class="tab" data-p="insights">Insights &amp; Projects</button>
+  </div>
+  <div class="card" id="tableCard" style="margin-bottom:14px">
     <div class="head"><h2 id="tableTitle">Campaigns</h2><div class="tabs" id="tabs"></div></div>
     <div class="tbl-wrap" id="table"></div>
   </div>
@@ -220,7 +260,7 @@ function parseTable(g){
 
 /* ================= STATE ================= */
 let WEEKS=[], MONTHLY={}, INSIGHTS=[], PROJECTS=[];
-const S = { month: CONFIG.MONTHS[0], view:'month', week:0, tab:0 };
+const S = { month: CONFIG.MONTHS[0], view:'month', week:0, tab:0, panel:'summary' };
 
 async function fetchTab(tab){
   const r=await fetch(CONFIG.API+'?tab='+encodeURIComponent(tab)+'&t='+Date.now());
@@ -376,8 +416,14 @@ function renderMonth(weeks){
 }
 
 function renderNotes(){
-  const wrap=document.getElementById('monthlyOnly');
-  if(S.view!=='month'){ wrap.style.display='none'; return; }
+  const wrap=document.getElementById('monthlyOnly'), tabs=document.getElementById('panelTabs'), card=document.getElementById('tableCard');
+  if(S.view!=='month'){ tabs.style.display='none'; wrap.style.display='none'; card.style.display='block'; return; }
+  tabs.style.display='flex';
+  tabs.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.p===S.panel));
+  const showIns=S.panel==='insights';
+  card.style.display=showIns?'none':'block';
+  wrap.style.display=showIns?'block':'none';
+  if(!showIns) return;
   const rows=INSIGHTS.filter(r=>monthKey(r.month)===S.month);
   const ins=rows.map(r=>r.keyinsights||r.insights||r.insight).filter(Boolean);
   const chl=rows.map(r=>r.challenges||r.challenge).filter(Boolean);
@@ -385,12 +431,12 @@ function renderNotes(){
   const ul=a=>a.length?'<ul>'+a.map(x=>`<li>${esc(x)}</li>`).join('')+'</ul>':'<p class="empty">-</p>';
   document.getElementById('insights').innerHTML=ul(ins);
   document.getElementById('challenges').innerHTML=ul(chl);
-  document.getElementById('notesWrap').style.display=(ins.length||chl.length)?'grid':'none';
-  document.getElementById('projectsWrap').style.display=prj.length?'block':'none';
-  document.getElementById('projectsWrap').classList.toggle('mt14',!!(ins.length||chl.length));
-  document.getElementById('projects').innerHTML=`<table><tr><th>Company</th><th>Project</th><th>Owner</th><th>Status</th><th>Completion Date</th><th>Expected Impact</th></tr>`+
-    prj.map(r=>`<tr><td>${esc(r.company)}</td><td>${esc(r.project)}</td><td>${esc(r.owner)}</td><td><span class="badge">${esc(r.status)}</span></td><td>${esc(r.completiondate||r.date)}</td><td>${esc(r.expectedimpact||r.impact)}</td></tr>`).join('')+'</table>';
-  wrap.style.display=(ins.length||chl.length||prj.length)?'block':'none';
+  document.getElementById('notesWrap').style.display='grid';
+  document.getElementById('projectsWrap').style.display='block';
+  document.getElementById('projectsWrap').classList.add('mt14');
+  document.getElementById('projects').innerHTML=prj.length?`<table><tr><th>Company</th><th>Project</th><th>Owner</th><th>Status</th><th>Completion Date</th><th>Expected Impact</th></tr>`+
+    prj.map(r=>`<tr><td>${esc(r.company)}</td><td>${esc(r.project)}</td><td>${esc(r.owner)}</td><td><span class="badge">${esc(r.status)}</span></td><td>${esc(r.completiondate||r.date)}</td><td>${esc(r.expectedimpact||r.impact)}</td></tr>`).join('')+'</table>'
+    :'<p class="empty">No projects for this month.</p>';
 }
 
 function renderWeek(b){
@@ -400,7 +446,7 @@ function renderWeek(b){
     document.getElementById('chart').innerHTML=''; document.getElementById('csat').innerHTML=''; return; }
   const idx=k=>b.cols.findIndex(x=>x.k===k);
   document.getElementById('chartTitle').textContent='Calls Volume · '+b.week;
-  document.getElementById('chart').innerHTML=barChart(b.rows.map(r=>({label:short(r.campaign),raw:r.cells[idx('callsvolume')]})),'#E30613');
+  document.getElementById('chart').innerHTML=barChart(b.rows.map(r=>({label:short(r.campaign),raw:r.cells[idx('callsvolume')]})),'#E0303A');
   document.getElementById('csatTitle').textContent='CSAT · '+b.week;
   document.getElementById('csat').innerHTML=csatBars(b.rows.map(r=>({label:r.campaign,raw:r.cells[idx('csat')]})));
   const wa=idx(WA_START);
@@ -412,7 +458,7 @@ function renderWeek(b){
 function groupedChart(camps,series){
   const W=640,H=230,pb=34,pt=24,pl=6;
   const all=series.flatMap(s=>s.vals.map(num)).filter(v=>v!=null); if(!all.length) return '<p class="empty">No data yet.</p>';
-  const max=Math.max(1,...all), shades=['#F3A3A8','#E8606A','#E30613','#9E0B14','#5C060C'];
+  const max=Math.max(1,...all), shades=['#F2AAAE','#EA6C72','#E0303A','#A8232B','#6B171C'];
   const slot=(W-pl)/camps.length, bw=Math.min(22,(slot*.8)/series.length);
   let svg=`<svg viewBox="0 0 ${W} ${H}" width="100%">`;
   camps.forEach((c,ci)=>{
@@ -432,6 +478,7 @@ document.addEventListener('click',e=>{
   else if(v){ S.view=v.dataset.v; }
   else if(w){ S.week=+w.dataset.w; S.view='week'; }
   else if(t){ S.tab=+t.dataset.t; }
+  else if(e.target.closest('[data-p]')){ S.panel=e.target.closest('[data-p]').dataset.p; }
   else return;
   render();
 });
