@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Inbound Dashboard</title>
+<title>Inbound Call Center Master Deck 2026</title>
 <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -16,14 +16,16 @@ body{margin:0;background:var(--page);color:var(--text);font-family:Inter,system-
 .wrap{max-width:1280px;margin:0 auto;padding:0 16px 40px}
 .topbar{height:6px;background:var(--red)}
 h1,h2,h3{font-family:'Crimson Pro',Georgia,serif;color:var(--navy);margin:0}
-header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding:20px 0 12px;flex-wrap:wrap}
+header{position:relative;text-align:center;padding:22px 130px 12px}
+header .logo{position:absolute;right:0;top:16px}
+@media(max-width:700px){header{padding:18px 0 8px}header .logo{position:static;display:block;margin:8px auto 0}}
 .eyebrow{color:var(--muted);font-family:'Crimson Pro',serif;font-size:18px}
 h1{font-size:32px;font-weight:700;line-height:1.1}
 .logo{height:46px}
 .logo-txt{font-weight:800;font-style:italic;color:var(--red);font-size:24px;letter-spacing:.5px}
 .filters{display:flex;flex-direction:column;align-items:center;gap:10px;padding:8px 0 18px;border-bottom:1px solid var(--line);margin-bottom:18px}
 .filters .group{flex-wrap:wrap;justify-content:center}
-#monthGroup .pill{padding:9px 22px;font-size:14px}
+#monthGroup .pill{padding:8px 13px;font-size:13px}
 #viewGroup{border-radius:20px}#viewGroup .pill{border-radius:16px;padding:6px 18px}
 #viewGroup .pill.on{background:var(--navy)}
 .group{display:flex;gap:4px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:3px}
@@ -84,10 +86,7 @@ svg text{font-family:Inter,sans-serif;font-size:11px;fill:var(--muted)}
 <div class="topbar"></div>
 <div class="wrap">
   <header>
-    <div>
-      <div class="eyebrow">Inbound Call Center</div>
-      <h1 id="title">Inbound Dashboard</h1>
-    </div>
+    <h1 id="title">Inbound Call Center Master Deck 2026</h1>
     <img class="logo" src="logo.png" alt="Petromin" onerror="this.onerror=null;this.src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAG4AAAA0CAYAAABrTg1qAAAROklEQVR4nO2cy3Ncx3XGf919H/PEzGAADJ4kCIqQSFpMKMWWnTix4/iVVTZOuVKVZbb5K/JHuCrZJ5uknGxix7Et2SpbliKJkUVSJCWQAIgnMQDmPffV3VncAQgyJC0OLdOowlc1hUHfnr49/fU595zvNCCCftdygmMH+bwncILhcELcMcUJcccUJ8QdU5wQd0xxQtwxhfO8J3AckOy10K0OCJE2WEA8ouOj2o+22fSttel7NTqCU84PNacT4p4Avd8mvnqH3vWbxCvrIFwEAmsPGDjS+fD3+0wJMSDpkDiBwIBQGBwKX3uFzGvncQq5p57bCXFPgNlt0v3xu7R/8nN6Vz9CkCV9upghRhODVwLKQWSKyEoB7+UFOCHutwtjLXGSwOgo3uI5hPAAOTCjp4QQIATWxIicj1Or4Z2bwykXh5rbCXGPgYkSdC9CBwkyX8SdckAqhH3YR35KCAFCYkyILBfwXjyLNz2G9Iaj4IS4xyDp9EkaXWw/QToZRDnLUIQdQIjUy2oXZ7yM/9I8aqw09HAnxD0Gpt4g3tjG9JsQRkjlgBmEg0+NQXQiBOgEcHDGSshcZuj5nRD3GJhml2S3gdURQhoQFiuGtbhBaGkNuA4qn8OpVZD5E+J+69DtHqbZA0eCkCAdhDVDGtwghTAWWciiaiX8qQqykB16fifEPQbB29fpfv8NTHsXYUnJGyaaBAQSi8YQ4C9egBdODZdRHMFQxNl+SLK1h43i1O8/SkU4hrDYlCCl0PttJBJVLAyuPsuXlFhihJW4tVHUeAXhPJvaKIapgMfL23R/9A5mvw1Rkn5ZGHpHPncMpCyLBldhs1mEtghtEAe+8Vl4EwJrDdbEuC/O4y+exl2YHjoVgCEsLt5r07/6Cc3/+BFmrwXaDL74kPnN7wXS+VsC1Mwk2T96lezlRby52hHins2tWCxYgywVUaX8M1vc0xFnLeZeg/DWCr33r2ObXaQQx9bQ7kMgEGj6ZByFKuXxzkziv3T6eU/ssXg64oRAb+xi7tYRxiAcHyn91OqOWtujduehAPuEPg90HnKHP2kXHb3nA/MRg9u5uNUJsn+4gBobGe7+vyM8pcVBsrZNtLyBiA3WDBzJQxGSeMhlWkAcuFM7cBsP9blf+TggbdgIjoEsn44lDksxFkuaj2FBCHl41wM3JgoF1MQ43pkZVGG4csvvCp+aOGssaE10d5t4dQsSEIY0qTQPMmfFYHMf2f3WPsKCDtl6mCSLtQePTvFAe8rngRJxZKDBGGkZ5ch9sWk3AyhS2ckO8qpBzcXaBKTGGS3i1sZRYxXEMwQOvwt8euISje72idbuoTf2QB9Y0EPWJQVCSnAU1pjDxTE6wpoEiQKpQCmElGlYYAw2NRIsAqs1GIt17/fBHpBmB3nVwe4Qh9et1unLxiAkUrhYGw3CfA+Ry4DvYrXF9vvYIEAIJ7VEaXHmxnFmx49FevOpiTPdPsndbfTOLrrbRdgjUZEQgAbfIXP5PP4Lc3hT46DkQJ8zRDu7hMvrRO/fQE2Ok7m0iDdZReWzCCVBSZJWl2BpPZWFijnciUp6TZt0MygFAvrX72DDCH9+EpXLIT0XpMD0QpL9JsGN28Qr6+itOmquhrcwR+alhXS8fBabaKLNOuHtNcIrH5PU61gZ485WccoBeuWH2LANWiP8EeT4BUR5HqIWev82pn4TTAKZMrJ8GuHkIOqQ3PsAma0iCpNIoTDdHXRnG2dsETlyGjEyje3XMc1V9M41VHkBUV5AFqc+O+Jo90k+Wcc0GtgkQIrMoASfPkcMFpFzyH3lMoWvv0bu4gI21mAt0lEEd+/RffsqjZ09/M+do/Sdb5D93AKqmMOGCcKVRGs7iJ9dQZULeHMTZM/PIzP+EZdmMVEMP/glxAmlr72KGikgXBeMwcYJSb1J64dv0X39LfrtfTKXz1P4iy9S/PrnUYUs0vfAUYTrdXr/e4tmEGM+CNC9Du50CZVvkXzyY0xjE+IEWZxBSRenOI1p3UWv/pzkkx9gkwhZOYNz5mtIr4RprhFf+2fk+HnU1CtYQG9fJdm+CgvfwJ3/c8TIFLa7hV5/m/j6v2LPfhvHK8JnSVzSaBJeX0I3m4Py+/1r1lqQEpnJkTk3R/bcHG6lSPuN99HtHrk/OEvm9ARKXSL4cInM2VmyC7N44xXiu/fovH4Fkpik3iBaWkNNVyAOUPksmflpnGqJaHuX8PYq/RufEN/dxz81jT9bI2m0CW+vEaxukz03R3ZhBvOVy5gwIOkFlL/7TQp/ehlZzNH6+XtE69tkXlogM1tj5LWLJCtbmEgTfHATt+qj8j3M1m1M2EXgYINdSHqQ9Ek2r6DvfQidHYRJEIUppJfHhk1s5y5064gxkMrHNpahvYns1TFbV0iKk3in/wTb24XOJjbqYKULmdGnJu2piDONLsHVZUyjx/248SD60wjfR1ZKuJNjyHyWeL9D66330XtNnFqJbKmAM1HBPTWJO1fDnaiAo4h3m/Sv3oagj67vEy5vwqoirm8i8jnc8QpOpUh49TbtX/6KzpV38WfPoRZTa4zX79B97wbhyhZuqYC8uIDIZXBPT5P70itkzi8gfY/g6m3ar79J//YqxdaXcHM5Mmdn8ean8E5Po7f2UCWDdHvoOAInB8pPnwJxF93dwuzewgZtyI1Dr46QDsIvYdtb2G4dpEJ6eYSbxfT3sVEHpMR0NxGNO+jWKra9jg1a4OaRmRIyW/7siLPakOx3CG7cxbQCQD2QAlmrkQUfp1bFGR0BBOHmHt2PPsY0GozsfxHTC9OAoZhDVQqoUg4da3Q/QocRtts7tLgkaaDqG3gvX0D3A2w/oP/OR7T/+xd0P/wF3nemcEbyCCDe2iX4eB2918S0e5gwIt5pQD5L7suXcaplks092j/8Fe2fvkm0vYmbrxJfWCTzwhyymEVNVnFOT6PyIUJ2QWUR2VGkm4W4hw32sY1lTGsDkIjKWayOwckiMyVM1IZgH+mPILJlhOOnVohB5EYxYQvdXEFsfwD7y9i4h8pPInJjCK/wuGV/NuKsNulpp41d9MY9CBKEddLnjkwTVys0spLHXZhC5rOorI83Uab2d98Fa8hfWsT0E8LlLfReBxKD8D2ko8m/uog/M0a0fo/OG+/Sv7mEDPP45WlyF87iTlUxiSHa3sPsRTjOGP7sHO7sBChJ/gsX8BamEUIgPJf+rbu0fvouzmiR8rdfQ+V94pVNwuvL0IxwsyW8yQmckXyqBHX6CN/FfaEGahebtBHFaUSmgsBiggZ25yPo7SEzBUSmANLBOB4oBwuY/j4mbEFuDJwcNgkxYQuRrSBHFzBbv4b+HnbpJ5juFmBQpdOIzGdZAdeGaHOPeGsH3W0hcdLk1dojabLBGS3iL8ygsv5hoOBOjkMYE2/U6X24lEaMiUX6LjbRBDdWiO5uktzbIal3idfugU6Q2RzO6Bj+TA2Z9Uk290i26phWiPJGcacnURMVdBCBUjjjo3i1Cv1rd+j88tf037lK/tUX8WqjiIyL6faJVrYwrRinVsQ7M40aHcFqTVJvYtG48xWEXYK4hyrPp1YTNLFxB9tYRsQ9VO0i6BDbXAPHB8fDJgE2aEASIEqnQHmpi0wCRPkU6tSfYaIAu7eE2bmGTfqI/ARiZBaZKX92xFmtSda2STa3sKYPKo8QCqsHvnJQ1XGqJTJnZ5G5DKbbJ16/R7LXJNneJV7dpv2z/yHZbVD+62+hSnlMt0/rp+/S+M+f0XnrXVwyCG0hCpDlMmq8glMpQWKJt3ZJtuvYXoRTLuNOTqBKBeJGm/BuHWEsbqVAuLRG5/X3iK8twblZVKkIjkJHMfF+C5uALJbwF+dwxkvYMCHcqGNtQPbUGCLcR0SgJl/AJgE67kDQBB2B8lDVFzGdTfT6ewPishC0IGyCSZCFSYRU2H4DqxNk8TTq1Fex7W2S/h56+0qaRuWmkCOnwB9eVvvNFhdrotubxKs7qRR7oEgJsDZVTKzM4tRq+OfPIIs5eu/dZOd73yepp+kD/YRkp4MzVSN7fh53Zhzhe/gvzjNiNblLC+i9LvEnq3TfeRdvqox3dhqZ8dCtLtHaPZL+PowonHOzONUSJJr49gbdX10DY8ktzuCfnaHw5ZeJPrqJ7naI1ndwJ6v4p6co/823MEEfb3aM3ItnsJEm/HiNeLmOWwNvfAS7vI9ORtKcrbMB1mDDFiI/iRo/jypOYdvrmPYasvpCugbN1TQQwSJyo9i4i2mvY5WXEis9ZPUlRGMFu3kFpEB4WUR+HOEOL6t9Ootb3UZv7Kaqhz2qRKbPOZnNIUeKyJE8ut0juLVK980rmOYO9LsIJHh55EImDV4ciQlD3OkqMu9hX14guHoH3W6D1KhqAXeiDFFCslEnXFpD99rIgoN7agJcSbLXJLi1Qv/KDYQQxPV9RN7HnZ9EFrLEW7u033iP/OcvIIt5it/4AhiDyHjYxBJ+dJPu29cwzS7yVA6nGBN7LtYtI0bmsHEP4WSwThZVOYOauJQutLXpOH4F4eYx/X0QCpGpQKYK3Q1s1EPmJxC5UYRUUJpHVBcRhclUz85XEfkauE9/EPZTE0ei0es7mO0GAo9DmUsIrNUIpZClPMJzMZ0e8W6LcGkd22ijtAuqiEUjR4qochGrNbrRRAuBU/Rxq0VQDuGdbWyiAYsqZJD5DMl+i2BpneCjZUy3jzs+ijtRxvQCwuUNeteWiG4tIzyXcGUdNTkKvgO5HOHH6+z/479j+iGFr75C/tVFMJZ4t0Xvg49p/dt/0X3zffzzF/DGcwg3RoxMI0bOogoz6O4OxisjRk4hJy8jJl9BmwSrLSJbQxbmEH4Z06sj8hPg5BD5cWx/DyE85NgssjgNUqFKMzB2Hl27hDBhqrbka89kcU+sgOu9FsH1ZXb/4Z/ov3UNksGFQwHfghKIbAb3zBTemWlMEJKs7xDeuIuwFmFt6kYyPmq0hH/hNDLnD7RiATKVxeK1eyQb2yQb27hz03izU6jKCMleK9VHt7eQ2QzuzFRKkIF4Y4f43h5CCjKXXoCsh+kFRNeXsZ0e0ndwFmZwpydwq5VUD+/1iXd2iVZWsWGfkb/6S4rffJncl2Yx3T1wC8ixl7DBPvRSyUrma6jidFrF7mxjWmvIQi0NRJIAog4oB1mcwQRNCNsIL4coTCBytXTJ+ruYxjIYDX4RWTmLUN5nQ1xw6y69Nz+g8b1/Ibq+gpCZ9IzJUWH5UMG3g+aDk1DiQP4d9BMH1ZbDEsuDw6S7QYhUjxSDk1EHKr5ApCUaebQ93UUPuG5IdU2bCgPWAkqhPB9rLNZobBJhSXCmq1T//m8pfP01/IvzQy/i88ATXaXZbRHfXMP2+ghMupgP18kGeiUc1MLko8tpB4s9gEQ+2OVoiceSJq9wvwpgB9KaNhxWBAbt4vDjg/qaOZjHoLJgLDYIBj0EUjpY6SGzJdxTU6iJ8m9Ypt8/PJG4ZLdF9MkatheDctKICDk40fsQjtbGDutmD+OgyPbQRx7q8oChPqb9fv+Ha3Pcj3wPK9uDhsHGs2hksYA7PYEzVUUVhw8SnhceS5zth+jtOuHtVXQ/3a3WpsEDjzvRe+gLeXKfR97wyOf+3xGDI+M9cO3I0cCHC673b3j/x6CiakyIU8nin57EqRQRmeGfNc8LjyUu3twjXt0gurMESTxwhymBj7Smx63b4/o8Ckf0z2dqf3gOh9wdHEztIqt+KtFljx9p8ATiTBSjalVyX34FKeSD1nRcIQRg0CYg98pFMpcXEUP8UeHvAx7vKi04M5Pk/vhVpOOkz7bjfg5PCCwGrRMyF8/gLM4ic/7zntVQGOok8wmeP07+XcYxxQlxxxQnxB1TnBB3THFC3DHFCXHHFCfEHVP8H4OoHFKr50PTAAAAAElFTkSuQmCC'">
   </header>
 
@@ -135,7 +134,10 @@ const CONFIG = {
   INSIGHTS_TAB: 'Insights',
   PROJECTS_TAB: 'Projects',
   YEAR: 2026,
-  MONTHS: ['Sep','Oct','Nov','Dec']
+  MONTHS: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+  ALWAYS_SHOW: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],   // months that always have a button
+  WEEKLY_ARCHIVE_TAB: 'Weekly Archive',
+  MONTHLY_ARCHIVE_TAB: 'Monthly Archive'
 };
 const MONTH_NAMES = {Jan:'January',Feb:'February',Mar:'March',Apr:'April',May:'May',Jun:'June',Jul:'July',Aug:'August',Sep:'September',Oct:'October',Nov:'November',Dec:'December'};
 
@@ -194,7 +196,7 @@ function parseMonthly(g){
   const wcs=head.map((h,i)=>key(h)==='week'?i:-1).filter(i=>i>=0);
   wcs.forEach((wc,bi)=>{
     const end = bi+1<wcs.length ? wcs[bi+1]-1 : head.length;
-    let month=''; for(let r=1;r<g.length&&!month;r++) month=monthKey(g[r][wc-1]);
+    let month=''; for(let r=0;r<g.length&&!month;r++) month=monthKey(g[r][wc-1]);
     if(!month) return;
     const cols=[]; for(let c=wc+1;c<end;c++) if(txt(head[c])) cols.push({c,label:txt(head[c]),k:key(head[c])});
     const totals=[]; let campaign='';
@@ -226,8 +228,10 @@ async function fetchTab(tab){
   const j=await r.json(); if(j&&j.error) throw new Error(j.error); return j;
 }
 const CACHE_KEY='inbound_masterdeck_cache_v1';
-function applyData(w,m,keepMonth,ins,prj){
-  WEEKS=parseWeekly(w); MONTHLY=parseMonthly(m); INSIGHTS=parseTable(ins); PROJECTS=parseTable(prj);
+function applyData(w,m,keepMonth,ins,prj,wa,ma){
+  const mainW=parseWeekly(w), mainMonths=new Set(mainW.filter(b=>b.hasData).map(b=>b.month));
+  WEEKS=parseWeekly(wa).filter(b=>!mainMonths.has(b.month)).concat(mainW);   // a month in the main tab wins over the archive tab
+  MONTHLY=Object.assign(parseMonthly(ma),parseMonthly(m)); INSIGHTS=parseTable(ins); PROJECTS=parseTable(prj);
   if(!keepMonth){
     const withData=CONFIG.MONTHS.filter(mo=>(MONTHLY[mo]&&MONTHLY[mo].hasData)||WEEKS.some(b=>b.month===mo&&b.hasData));
     if(withData.length) S.month=withData[withData.length-1];
@@ -239,24 +243,27 @@ async function load(){
   // 1) show the last saved copy instantly (same browser), then refresh from the sheet
   let cached=null;
   try{ cached=JSON.parse(localStorage.getItem(CACHE_KEY)||'null'); }catch(e){}
-  if(cached&&cached.w){ applyData(cached.w,cached.m,false,cached.i,cached.p); st.textContent='Updating from Google Sheet…'; }
+  if(cached&&cached.w){ applyData(cached.w,cached.m,false,cached.i,cached.p,cached.wa,cached.ma); st.textContent='Updating from Google Sheet…'; }
   else st.textContent='Loading…';
   const errs=[];
-  const [w,m,ins,prj]=await Promise.all([
+  const [w,m,ins,prj,wa,ma]=await Promise.all([
     fetchTab(CONFIG.WEEKLY_TAB).catch(e=>{errs.push(CONFIG.WEEKLY_TAB+': '+e.message);return null;}),
     fetchTab(CONFIG.MONTHLY_TAB).catch(e=>{errs.push(CONFIG.MONTHLY_TAB+': '+e.message);return null;}),
     fetchTab(CONFIG.INSIGHTS_TAB).catch(()=>null),
-    fetchTab(CONFIG.PROJECTS_TAB).catch(()=>null)
+    fetchTab(CONFIG.PROJECTS_TAB).catch(()=>null),
+    fetchTab(CONFIG.WEEKLY_ARCHIVE_TAB).catch(()=>null),
+    fetchTab(CONFIG.MONTHLY_ARCHIVE_TAB).catch(()=>null)
   ]);
   if(w||m){
     const W=w||(cached&&cached.w), M=m||(cached&&cached.m);
-    applyData(W,M,!!cached,ins,prj);
-    try{ localStorage.setItem(CACHE_KEY,JSON.stringify({w:W,m:M,i:ins,p:prj,at:Date.now()})); }catch(e){}
+    applyData(W,M,!!cached,ins,prj,wa,ma);
+    try{ localStorage.setItem(CACHE_KEY,JSON.stringify({w:W,m:M,i:ins,p:prj,wa:wa,ma:ma,at:Date.now()})); }catch(e){}
   } else if(!cached) render();
   st.textContent = errs.length ? 'Could not read: '+errs.join(' · ')
     : 'Live from Google Sheet · updated '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
 }
 
+function visibleMonths(){ return CONFIG.MONTHS.filter(m=>CONFIG.ALWAYS_SHOW.includes(m)||(MONTHLY[m]&&MONTHLY[m].hasData)||WEEKS.some(b=>b.month===m&&b.hasData)); }
 const weeksOf = m => WEEKS.filter(b=>b.month===m&&b.hasData);
 
 /* ================= RENDER ================= */
@@ -264,16 +271,14 @@ function render(){
   const weeks=weeksOf(S.month);
   if(S.week>=weeks.length) S.week=0;
 
-  document.getElementById('monthGroup').innerHTML=CONFIG.MONTHS.map(m=>`<button class="pill ${m===S.month?'on':''}" data-m="${m}">${MONTH_NAMES[m]}</button>`).join('');
+  document.getElementById('monthGroup').innerHTML=visibleMonths().map(m=>`<button class="pill ${m===S.month?'on':''}" data-m="${m}">${MONTH_NAMES[m]}</button>`).join('');
   document.querySelectorAll('#viewGroup .pill').forEach(b=>b.classList.toggle('on',b.dataset.v===S.view));
   const wg=document.getElementById('weekGroup');
   wg.style.display=S.view==='week'?'flex':'none';
   wg.innerHTML=weeks.length?weeks.map((b,i)=>`<button class="pill ${i===S.week?'on':''}" data-w="${i}">${esc(b.week||'Week '+(i+1))}</button>`).join(''):'<span class="empty" style="padding:6px 10px">No weekly data yet</span>';
 
   const wb=weeks[S.week];
-  document.getElementById('title').textContent = S.view==='month'
-    ? 'Monthly Inbound Summary · '+MONTH_NAMES[S.month]+' '+CONFIG.YEAR
-    : 'Weekly Inbound Summary · '+MONTH_NAMES[S.month]+(wb&&wb.week?' · '+wb.week:'');
+  document.getElementById('title').textContent = 'Inbound Call Center Master Deck '+CONFIG.YEAR;
 
   if(S.view==='month'){ const mi=CONFIG.MONTHS.indexOf(S.month); renderKPIs(monthKpi(S.month), mi>0?monthKpi(CONFIG.MONTHS[mi-1]):null, 'vs previous month'); renderMonth(weeks); }
   else { renderKPIs(weekKpi(wb), weekKpi(prevWeekBlock()), 'vs previous week'); renderWeek(wb); }
