@@ -190,8 +190,7 @@ const CONFIG = {
   YEAR: 2026,
   MONTHS: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
   ALWAYS_SHOW: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],   // months that always have a button
-  WEEKLY_ARCHIVE_TAB: 'Weekly Archive',
-  MONTHLY_ARCHIVE_TAB: 'Monthly Archive'
+  _unused: ''
 };
 const MONTH_NAMES = {Jan:'January',Feb:'February',Mar:'March',Apr:'April',May:'May',Jun:'June',Jul:'July',Aug:'August',Sep:'September',Oct:'October',Nov:'November',Dec:'December'};
 
@@ -217,35 +216,12 @@ const blank = v => { const s=txt(v); return s===''||s==='-'||s==='–'||s==='%';
 /* ================= PARSE: Weekly MASTERDECK =================
    Months side by side. In each month: repeated blocks of
    "Weekly Inbound Summary" / "Week 1-8" / header row (Campaign | Calls Volume | …) / one row per campaign. */
+/* ================= PARSE: Weekly MASTERDECK =================
+   Row 1 = headers. Each month is a block of columns that starts with a "Week" column
+   (month name in the column before it). Column A = campaign (merged over its week rows).
+   Every row with a week name ("Week 1-8") is one campaign in that week. */
 function parseWeekly(g){
-  const out=[]; if(!Array.isArray(g)) return out;
-  for(let r=0;r<g.length;r++){
-    if(key(g[r][0])!=='campaign') continue;               // header row of a week block
-    const head=g[r];
-    const starts=head.map((h,i)=>key(h)==='callsvolume'?i:-1).filter(i=>i>=0);
-    starts.forEach((c0,bi)=>{
-      const c1 = bi+1<starts.length ? starts[bi+1]-1 : head.length;
-      let month=''; for(let rr=0;rr<g.length&&!month;rr++) month=monthKey(g[rr][c0-1]);
-      if(!month) return;
-      let week='';                                          // "Week 1-8" just above the header
-      for(let rr=r-1;rr>=Math.max(0,r-3)&&!week;rr--) for(let c=c0;c<c1&&!week;c++) if(/^week\b/i.test(txt(g[rr][c]))) week=txt(g[rr][c]);
-      const cols=[]; for(let c=c0;c<c1;c++) if(txt(head[c])) cols.push({c,label:txt(head[c]),k:key(head[c])});
-      const rows=[];
-      for(let rr=r+1;rr<g.length;rr++){
-        const name=txt(g[rr][0]); if(!name||key(name)==='campaign') break;
-        rows.push({campaign:name, cells:cols.map(x=>g[rr][x.c])});
-      }
-      out.push({month, week, cols, rows, hasData: rows.some(x=>x.cells.some(v=>!blank(v)))});
-    });
-  }
-  return out;
-}
-
-/* ================= PARSE: Monthly MASTERDECK =================
-   Row 1 = headers; each month starts with a "Week" column (month name in the column before it).
-   Column A = campaign, "Total" row = month total. */
-function parseMonthly(g){
-  const out={}; if(!Array.isArray(g)||!g.length) return out;
+  const out=[]; if(!Array.isArray(g)||!g.length) return out;
   const head=g[0];
   const wcs=head.map((h,i)=>key(h)==='week'?i:-1).filter(i=>i>=0);
   wcs.forEach((wc,bi)=>{
@@ -253,25 +229,38 @@ function parseMonthly(g){
     let month=''; for(let r=0;r<g.length&&!month;r++) month=monthKey(g[r][wc-1]);
     if(!month) return;
     const cols=[]; for(let c=wc+1;c<end;c++) if(txt(head[c])) cols.push({c,label:txt(head[c]),k:key(head[c])});
-    const totals=[]; let campaign='', block=[], done=false;
-    const hasVals=r=>cols.some(x=>!blank(g[r][x.c]));
+    const weeks=[], byLabel={}; let campaign='';
     for(let r=1;r<g.length;r++){
       const a=txt(g[r][0]), wk=txt(g[r][wc]);
-      if(a&&key(a)!=='total'){ campaign=a; block=[]; done=false; }
-      if(!campaign) continue;
-      // Total row: "Total" in column A, or (if the label is missing) the first row after the weeks that has numbers but no week name
-      const isTotal = key(a)==='total' || (!a && !wk && !done && block.length>0 && hasVals(r));
-      if(isTotal){
-        const vals={};
-        cols.forEach(x=>{
-          let v=g[r][x.c];
-          // value typed once for the whole month in a merged cell (e.g. Tickets, Booking, ACW) sits on the week rows, not the Total row
-          if(blank(v)){ const filled=block.map(rr=>g[rr][x.c]).filter(z=>!blank(z)); if(filled.length===1) v=filled[0]; }
-          vals[x.k]=v;
-        });
-        totals.push({campaign,vals}); done=true; continue;
-      }
-      if(!done) block.push(r);
+      if(a&&key(a)!=='total') campaign=a;
+      if(key(a)==='total'||!campaign||!/^week/i.test(wk)) continue;
+      const lk=key(wk);
+      if(!byLabel[lk]){ byLabel[lk]={month,week:wk,cols,rows:[]}; weeks.push(byLabel[lk]); }
+      byLabel[lk].rows.push({campaign,cells:cols.map(x=>g[r][x.c])});
+    }
+    weeks.forEach(w=>{ w.hasData=w.rows.some(x=>x.cells.some(v=>!blank(v))); out.push(w); });
+  });
+  return out;
+}
+
+/* ================= PARSE: Monthly MASTERDECK =================
+   Months stacked under each other. Each month = a header row (Calls Volume, SL %, …),
+   then one row per campaign (name in column A). Month name sits in column B (merged). */
+function parseMonthly(g){
+  const out={}; if(!Array.isArray(g)||!g.length) return out;
+  const isHead=r=>(g[r]||[]).some(c=>key(c)==='callsvolume');
+  const heads=[]; for(let r=0;r<g.length;r++) if(isHead(r)) heads.push(r);
+  heads.forEach((hr,hi)=>{
+    const next = hi+1<heads.length ? heads[hi+1] : g.length;
+    let month=''; for(let r=hr;r<next&&!month;r++) for(let c=0;c<Math.min(3,(g[r]||[]).length)&&!month;c++) month=monthKey(g[r][c]);
+    if(!month) return;
+    const head=g[hr];
+    const cols=[]; for(let c=0;c<head.length;c++){ const k=key(head[c]); if(c>1&&k&&!monthKey(head[c])) cols.push({c,label:txt(head[c]),k}); }
+    const totals=[];
+    for(let r=hr+1;r<next;r++){
+      const a=txt(g[r][0]); if(!a||monthKey(a)||key(a)==='campin'||key(a)==='campaign') continue;
+      const vals={}; cols.forEach(x=>vals[x.k]=g[r][x.c]);
+      totals.push({campaign:a,vals});
     }
     out[month]={cols,totals,hasData: totals.some(t=>Object.values(t.vals).some(v=>!blank(v)))};
   });
@@ -295,11 +284,9 @@ async function fetchTab(tab){
   if(!r.ok) throw new Error('HTTP '+r.status);
   const j=await r.json(); if(j&&j.error) throw new Error(j.error); return j;
 }
-const CACHE_KEY='inbound_masterdeck_cache_v1';
-function applyData(w,m,keepMonth,ins,prj,wa,ma){
-  const mainW=parseWeekly(w), mainMonths=new Set(mainW.filter(b=>b.hasData).map(b=>b.month));
-  WEEKS=parseWeekly(wa).filter(b=>!mainMonths.has(b.month)).concat(mainW);   // a month in the main tab wins over the archive tab
-  MONTHLY=Object.assign(parseMonthly(ma),parseMonthly(m)); INSIGHTS=parseTable(ins); PROJECTS=parseTable(prj);
+const CACHE_KEY='inbound_masterdeck_cache_v2';
+function applyData(w,m,keepMonth,ins,prj){
+  WEEKS=parseWeekly(w); MONTHLY=parseMonthly(m); INSIGHTS=parseTable(ins); PROJECTS=parseTable(prj);
   if(!keepMonth){
     const withData=CONFIG.MONTHS.filter(mo=>(MONTHLY[mo]&&MONTHLY[mo].hasData)||WEEKS.some(b=>b.month===mo&&b.hasData));
     if(withData.length) S.month=withData[withData.length-1];
@@ -311,21 +298,19 @@ async function load(){
   // 1) show the last saved copy instantly (same browser), then refresh from the sheet
   let cached=null;
   try{ cached=JSON.parse(localStorage.getItem(CACHE_KEY)||'null'); }catch(e){}
-  if(cached&&cached.w){ applyData(cached.w,cached.m,false,cached.i,cached.p,cached.wa,cached.ma); st.textContent='Updating from Google Sheet…'; }
+  if(cached&&cached.w){ applyData(cached.w,cached.m,false,cached.i,cached.p); st.textContent='Updating from Google Sheet…'; }
   else st.textContent='Loading…';
   const errs=[];
-  const [w,m,ins,prj,wa,ma]=await Promise.all([
+  const [w,m,ins,prj]=await Promise.all([
     fetchTab(CONFIG.WEEKLY_TAB).catch(e=>{errs.push(CONFIG.WEEKLY_TAB+': '+e.message);return null;}),
     fetchTab(CONFIG.MONTHLY_TAB).catch(e=>{errs.push(CONFIG.MONTHLY_TAB+': '+e.message);return null;}),
     fetchTab(CONFIG.INSIGHTS_TAB).catch(()=>null),
-    fetchTab(CONFIG.PROJECTS_TAB).catch(()=>null),
-    fetchTab(CONFIG.WEEKLY_ARCHIVE_TAB).catch(()=>null),
-    fetchTab(CONFIG.MONTHLY_ARCHIVE_TAB).catch(()=>null)
+    fetchTab(CONFIG.PROJECTS_TAB).catch(()=>null)
   ]);
   if(w||m){
     const W=w||(cached&&cached.w), M=m||(cached&&cached.m);
-    applyData(W,M,!!cached,ins,prj,wa,ma);
-    try{ localStorage.setItem(CACHE_KEY,JSON.stringify({w:W,m:M,i:ins,p:prj,wa:wa,ma:ma,at:Date.now()})); }catch(e){}
+    applyData(W,M,!!cached,ins,prj);
+    try{ localStorage.setItem(CACHE_KEY,JSON.stringify({w:W,m:M,i:ins,p:prj,at:Date.now()})); }catch(e){}
   } else if(!cached) render();
   st.textContent = errs.length ? 'Could not read: '+errs.join(' · ')
     : 'Live from Google Sheet · updated '+new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
@@ -492,9 +477,9 @@ function renderWeek(b){
   document.getElementById('chart').innerHTML=barChart(b.rows.map(r=>({label:short(r.campaign),raw:r.cells[idx('callsvolume')]})),'#D9444A');
   document.getElementById('csatTitle').textContent='CSAT · '+b.week;
   document.getElementById('csat').innerHTML=csatBars(b.rows.map(r=>({label:r.campaign,raw:r.cells[idx('csat')]})));
-  const wa=idx(WA_START);
-  el.innerHTML=`<table><tr><th>Campaign</th>${b.cols.map((c,i)=>`<th class="${wa>=0&&i>=wa?'wa':''}">${esc(c.label)}</th>`).join('')}</tr>`+
-    b.rows.map(r=>`<tr><td>${esc(r.campaign)}</td>${r.cells.map((v,i)=>`<td>${b.cols[i].k==='csat'&&!blank(v)?'<b>'+show(v)+'</b>':show(v)}</td>`).join('')}</tr>`).join('')+'</table>';
+  const vis=b.cols.map((c,i)=>i).filter(i=>b.rows.some(r=>!blank(r.cells[i])));   // skip columns that are empty for the whole week
+  el.innerHTML=`<table><tr><th>Campaign</th>${vis.map(i=>`<th>${esc(b.cols[i].label)}</th>`).join('')}</tr>`+
+    b.rows.map(r=>`<tr><td>${esc(r.campaign)}</td>${vis.map(i=>{const v=r.cells[i];return `<td>${b.cols[i].k==='csat'&&!blank(v)?'<b>'+show(v)+'</b>':(show(v)||'-')}</td>`;}).join('')}</tr>`).join('')+'</table>';
 }
 
 /* grouped bars: campaigns on x, one bar per week; labels = cell text */
