@@ -253,11 +253,25 @@ function parseMonthly(g){
     let month=''; for(let r=0;r<g.length&&!month;r++) month=monthKey(g[r][wc-1]);
     if(!month) return;
     const cols=[]; for(let c=wc+1;c<end;c++) if(txt(head[c])) cols.push({c,label:txt(head[c]),k:key(head[c])});
-    const totals=[]; let campaign='';
+    const totals=[]; let campaign='', block=[], done=false;
+    const hasVals=r=>cols.some(x=>!blank(g[r][x.c]));
     for(let r=1;r<g.length;r++){
-      const a=txt(g[r][0]);
-      if(a&&key(a)!=='total'){ campaign=a; continue; }
-      if(key(a)==='total'&&campaign){ const vals={}; cols.forEach(x=>vals[x.k]=g[r][x.c]); totals.push({campaign,vals}); }
+      const a=txt(g[r][0]), wk=txt(g[r][wc]);
+      if(a&&key(a)!=='total'){ campaign=a; block=[]; done=false; }
+      if(!campaign) continue;
+      // Total row: "Total" in column A, or (if the label is missing) the first row after the weeks that has numbers but no week name
+      const isTotal = key(a)==='total' || (!a && !wk && !done && block.length>0 && hasVals(r));
+      if(isTotal){
+        const vals={};
+        cols.forEach(x=>{
+          let v=g[r][x.c];
+          // value typed once for the whole month in a merged cell (e.g. Tickets, Booking, ACW) sits on the week rows, not the Total row
+          if(blank(v)){ const filled=block.map(rr=>g[rr][x.c]).filter(z=>!blank(z)); if(filled.length===1) v=filled[0]; }
+          vals[x.k]=v;
+        });
+        totals.push({campaign,vals}); done=true; continue;
+      }
+      if(!done) block.push(r);
     }
     out[month]={cols,totals,hasData: totals.some(t=>Object.values(t.vals).some(v=>!blank(v)))};
   });
