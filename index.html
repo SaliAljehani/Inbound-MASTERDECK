@@ -125,6 +125,7 @@ body{font-size:14px} table{font-size:13.5px} td:first-child{font-size:14px;font-
 
 .monthmode{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important}
 .monthmode>.card:first-child{order:2}
+.monthmode.single{grid-template-columns:1fr!important}
 .tvc-row{display:grid;grid-template-columns:110px 1fr 46px;gap:8px;align-items:center;margin:6px 0;font-size:13px}
 .tvc-bars{display:flex;flex-direction:column;gap:3px}
 .tvc-bars .tb{height:11px;border-radius:3px;position:relative}
@@ -136,6 +137,12 @@ body{font-size:14px} table{font-size:13.5px} td:first-child{font-size:14px;font-
 .mtable tr:first-child th:first-child,.mtable td:first-child{width:200px}
 #table table:not(.mtable) tr:first-child th:first-child{width:170px}
 th,td{overflow-wrap:anywhere}
+
+.split{display:grid;gap:12px}
+.split .card h2{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.split .card h2::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--red)}
+.split table{table-layout:fixed}
+.split table tr:first-child th:first-child{width:170px}
 </style>
 </head>
 <body>
@@ -166,7 +173,7 @@ th,td{overflow-wrap:anywhere}
     <button class="tab on" data-p="summary">Campaigns Summary</button>
     <button class="tab" data-p="insights">Insights &amp; Projects</button>
   </div>
-  <div class="card" id="tableCard" style="margin-bottom:14px">
+  <div id="tableCard" style="margin-bottom:14px">
     <div class="head"><h2 id="tableTitle">Campaigns</h2><div class="tabs" id="tabs"></div></div>
     <div class="tbl-wrap" id="table"></div>
   </div>
@@ -202,11 +209,22 @@ const MONTH_NAMES = {Jan:'January',Feb:'February',Mar:'March',Apr:'April',May:'M
 
 /* Monthly table tabs: which sheet columns go under which tab (matched by header, ignoring spaces/symbols) */
 const MONTH_GROUPS = [
-  ['Calls',               ['callsvolume','sl','asa','abandonedrate','avgaht','avgacw']],
-  ['WhatsApp',            ['whatsappvolume','avgfirstrt','avgrt','abandon','reconnected']],
-  ['Tickets & Bookings',  ['tickets','ticketsvscalls','booking','bookings']],
-  ['Customer Experience', ['csat']]
+  ['Calls',               ['callsvolume','answered','sl','asa','abandonedrate','avgaht','aht','avgacw','acw','csat']],
+  ['WhatsApp',            ['whatsappvolume','avgfirstrt','avgfirst','firstrt','avgrt','abandon','reconnected']],
+  ['Tickets & Bookings',  ['tickets','ticketsvscalls','booking','bookings']]
 ];
+/* one table per section; campaigns down the side, metrics across the top.
+   Columns empty for every campaign, and sections with no columns, are not shown. */
+function splitTables(camps,cols,get){
+  const filled=c=>camps.some(cp=>!blank(get(cp,c.k)));
+  const groups=MONTH_GROUPS.map(([n,ks])=>[n,ks.flatMap(k=>cols.filter(c=>c.k===k))]);
+  const used=new Set(groups.flatMap(g=>g[1].map(c=>c.k)));
+  const other=cols.filter(c=>!used.has(c.k)); if(other.length) groups.push(['Other',other]);
+  const html=groups.map(([n,cs])=>[n,cs.filter(filled)]).filter(g=>g[1].length).map(([n,cs])=>
+    `<div class="card"><h2>${esc(n)}</h2><table><tr><th>Campaign</th>${cs.map(c=>`<th>${esc(c.label)}</th>`).join('')}</tr>`+
+    camps.map(cp=>`<tr><td>${esc(cp)}</td>${cs.map(c=>{const v=get(cp,c.k);return `<td>${c.k==='csat'&&!blank(v)?'<b>'+show(v)+'</b>':(show(v)||'-')}</td>`;}).join('')}</tr>`).join('')+'</table></div>').join('');
+  return html?`<div class="split">${html}</div>`:'<div class="card"><p class="empty">No data for this period yet.</p></div>';
+}
 const WA_START = 'whatsappvolume';   // weekly table: this column and after are WhatsApp (green header)
 
 /* ================= HELPERS ================= */
@@ -340,6 +358,7 @@ function render(){
   document.getElementById('title').textContent = 'Inbound Call Center Master Deck '+CONFIG.YEAR;
 
   document.getElementById('chartsRow').classList.toggle('monthmode',S.view==='month');
+  { const row=document.getElementById('chartsRow'); row.style.display=''; row.classList.remove('single'); row.querySelectorAll('.card').forEach(c=>c.style.display=''); }
   if(S.view==='month'){ const mi=CONFIG.MONTHS.indexOf(S.month); renderKPIs(monthKpi(S.month), mi>0?monthKpi(CONFIG.MONTHS[mi-1]):null, 'vs previous month'); renderMonth(weeks); }
   else { renderKPIs(weekKpi(wb), weekKpi(prevWeekBlock()), 'vs previous week'); renderWeek(wb); }
   renderNotes();
@@ -368,7 +387,9 @@ function renderKPIs(cur,prev,label){
     let d=`<div class="dlt">${label}: –</div>`;
     if(c!=null&&p!=null&&p!==0){
       const isPct=f===fP, diff=isPct?c-p:(c-p)/p*100, r=Math.round(diff);
-      d=`<div class="dlt ${r>0?'up':r<0?'down':''}">${r>0?'▲':r<0?'▼':''} ${Math.abs(r)}${isPct?' pts':'%'} ${label}</div>`;
+      // show the change as % AND as a number: "▲ 16% (+1,573)" or "▼ 11 pts (57% → 46%)"
+      const n=Math.round(c-p), extra=isPct?` (${fP(p)} → ${fP(c)})`:` (${n>0?'+':n<0?'−':''}${fN(Math.abs(n))})`;
+      d=`<div class="dlt ${r>0?'up':r<0?'down':''}">${r>0?'▲':r<0?'▼':''} ${Math.abs(r)}${isPct?' pts':'%'}${extra} ${label}</div>`;
     }
     return `<div class="card kpi"><div class="lbl">${l}</div><div class="val">${f(c)}</div>${d}</div>`;
   }).join('');
@@ -438,15 +459,14 @@ function renderMonth(weeks){
   document.getElementById('csatTitle').textContent='CSAT by campaign';
   document.getElementById('csat').innerHTML = csatBars(camps.map(c=>({label:c,raw:tot(c)?tot(c).vals.csat:''})));
 
-  if(!M||!M.hasData){ el.innerHTML='<p class="empty">No monthly data for this month yet.</p>'; return; }
-  const groups=MONTH_GROUPS.map(([name,keys])=>[name,M.cols.filter(c=>keys.includes(c.k))]).filter(g=>g[1].length);
-  const used=new Set(groups.flatMap(g=>g[1].map(c=>c.k)));
-  const other=M.cols.filter(c=>!used.has(c.k)); if(other.length) groups.push(['Other',other]);
-  const n=camps.length+1;
-  el.innerHTML=`<table class="mtable"><tr><th></th>${camps.map(c=>`<th>${esc(c)}</th>`).join('')}</tr>`+
-    groups.map(([name,cols])=>`<tr class="band ${BANDS[name]||''}"><td colspan="${n}">${esc(name)}</td></tr>`+
-      cols.map(c=>`<tr><td>${esc(c.label)}</td>${camps.map(cp=>{const t=tot(cp); const v=t?t.vals[c.k]:''; return `<td>${c.k==='csat'&&!blank(v)?'<b>'+show(v)+'</b>':(show(v)||'-')}</td>`;}).join('')}</tr>`).join('')
-    ).join('')+'</table>';
+  if(!M||!M.hasData){ el.innerHTML='<div class="card"><p class="empty">No monthly data for this month yet.</p></div>'; return; }
+  el.innerHTML=splitTables(camps,M.cols,(cp,k)=>{const t=tot(cp);return t?t.vals[k]:'';});
+  // months without CSAT / Tickets data: hide that card instead of showing an empty one
+  const hasK=k=>camps.some(c=>{const t=tot(c);return t&&!blank(t.vals[k]);});
+  const row=document.getElementById('chartsRow'), tvcCard=document.getElementById('chart').closest('.card'), csCard=document.getElementById('csat').closest('.card');
+  tvcCard.style.display=hasK('tickets')?'':'none'; csCard.style.display=hasK('csat')?'':'none';
+  row.style.display=(hasK('tickets')||hasK('csat'))?'':'none';
+  row.classList.toggle('single',!(hasK('tickets')&&hasK('csat')));
 }
 
 function renderNotes(){
@@ -476,16 +496,14 @@ function renderNotes(){
 function renderWeek(b){
   const el=document.getElementById('table'), tabs=document.getElementById('tabs'); tabs.innerHTML='';
   document.getElementById('tableTitle').textContent='Campaigns · '+(b&&b.week?b.week:'');
-  if(!b){ el.innerHTML='<p class="empty">No weekly data for this month yet.</p>';
+  if(!b){ el.innerHTML='<div class="card"><p class="empty">No weekly data for this month yet.</p></div>';
     document.getElementById('chart').innerHTML=''; document.getElementById('csat').innerHTML=''; return; }
   const idx=k=>b.cols.findIndex(x=>x.k===k);
   document.getElementById('chartTitle').textContent='Calls Volume · '+b.week;
   document.getElementById('chart').innerHTML=barChart(b.rows.map(r=>({label:short(r.campaign),raw:r.cells[idx('callsvolume')]})),'#D9444A');
   document.getElementById('csatTitle').textContent='CSAT · '+b.week;
   document.getElementById('csat').innerHTML=csatBars(b.rows.map(r=>({label:r.campaign,raw:r.cells[idx('csat')]})));
-  const vis=b.cols.map((c,i)=>i).filter(i=>b.rows.some(r=>!blank(r.cells[i])));   // skip columns that are empty for the whole week
-  el.innerHTML=`<table><tr><th>Campaign</th>${vis.map(i=>`<th>${esc(b.cols[i].label)}</th>`).join('')}</tr>`+
-    b.rows.map(r=>`<tr><td>${esc(r.campaign)}</td>${vis.map(i=>{const v=r.cells[i];return `<td>${b.cols[i].k==='csat'&&!blank(v)?'<b>'+show(v)+'</b>':(show(v)||'-')}</td>`;}).join('')}</tr>`).join('')+'</table>';
+  el.innerHTML=splitTables(b.rows.map(r=>r.campaign),b.cols,(cp,k)=>{const r=b.rows.find(x=>x.campaign===cp);const i=b.cols.findIndex(c=>c.k===k);return r&&i>=0?r.cells[i]:'';});
 }
 
 /* grouped bars: campaigns on x, one bar per week; labels = cell text */
